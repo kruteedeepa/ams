@@ -75,6 +75,10 @@ import {
   Sparkles,
   Headphones,
   Zap,
+  Lock,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
 } from 'lucide-react'
 
 const initialUsers = [
@@ -376,8 +380,22 @@ const sidebarItems = [
 function App() {
   const [activeMenu, setActiveMenu] = useState('Assets')
   const [profileOpen, setProfileOpen] = useState(false)
-  const [loggedIn, setLoggedIn] = useState(true)
+  const [loggedIn, setLoggedIn] = useState(false)
   const profileRef = useRef(null)
+
+  // Auth state
+  const [authMode, setAuthMode] = useState('signin') // 'signin' | 'signup'
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
+  const [showPwd, setShowPwd] = useState(false)
+  const [showPwd2, setShowPwd2] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [registeredUsers, setRegisteredUsers] = useState([
+    { name: 'Admin User', email: 'admin@ams.com', password: 'admin123', role: 'Administrator' },
+  ])
+  const [currentUser, setCurrentUser] = useState({ name: 'Admin User', email: 'admin@ams.com', role: 'Administrator' })
 
   // Employees state
   const [empSearch, setEmpSearch] = useState('')
@@ -595,10 +613,112 @@ function App() {
   const handleLogout = () => {
     setProfileOpen(false)
     setLoggedIn(false)
+    setActiveMenu('Assets')
+    setAuthMode('signin')
+    setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
+    setAuthError('')
   }
 
-  const handleLogin = () => {
-    setLoggedIn(true)
+  const handleAdminLogin = () => {
+    setAuthLoading(true)
+    setAuthError('')
+    setTimeout(() => {
+      setCurrentUser({ name: 'Admin User', email: 'admin@ams.com', role: 'Administrator' })
+      setLoggedIn(true)
+      setAuthLoading(false)
+      setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
+    }, 700)
+  }
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault()
+    setAuthError('')
+
+    if (authMode === 'signin') {
+      const email = authForm.email.trim().toLowerCase()
+      const pwd = authForm.password
+      if (!email || !pwd) {
+        setAuthError('Please enter both email and password.')
+        return
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        setAuthError('Please enter a valid email address.')
+        return
+      }
+      setAuthLoading(true)
+      setTimeout(() => {
+        const user = registeredUsers.find(u => u.email.toLowerCase() === email && u.password === pwd)
+        if (!user) {
+          setAuthError('Invalid email or password. Please try again.')
+          setAuthLoading(false)
+          return
+        }
+        setCurrentUser({ name: user.name, email: user.email, role: user.role })
+        setLoggedIn(true)
+        setAuthLoading(false)
+        setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
+      }, 800)
+    } else {
+      const name = authForm.name.trim()
+      const email = authForm.email.trim().toLowerCase()
+      const pwd = authForm.password
+      const cpwd = authForm.confirmPassword
+      if (!name || !email || !pwd || !cpwd) {
+        setAuthError('Please fill in all the fields.')
+        return
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        setAuthError('Please enter a valid email address.')
+        return
+      }
+      if (pwd.length < 6) {
+        setAuthError('Password must be at least 6 characters long.')
+        return
+      }
+      if (pwd !== cpwd) {
+        setAuthError('Passwords do not match.')
+        return
+      }
+      if (!acceptTerms) {
+        setAuthError('Please accept the Terms & Privacy Policy to continue.')
+        return
+      }
+      if (registeredUsers.some(u => u.email.toLowerCase() === email)) {
+        setAuthError('An account with this email already exists. Please sign in.')
+        return
+      }
+      setAuthLoading(true)
+      setTimeout(() => {
+        const newAccount = { name, email, password: pwd, role: 'User' }
+        setRegisteredUsers(prev => [...prev, newAccount])
+        setCurrentUser({ name, email, role: 'User' })
+        setLoggedIn(true)
+        setAuthLoading(false)
+        setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
+      }, 900)
+    }
+  }
+
+  // Password strength meter helpers
+  const getPwdStrength = (pwd) => {
+    if (!pwd) return { score: 0, label: '', color: 'bg-gray-200', text: 'text-gray-400' }
+    let score = 0
+    if (pwd.length >= 6) score++
+    if (pwd.length >= 10) score++
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++
+    if (/\d/.test(pwd)) score++
+    if (/[^A-Za-z0-9]/.test(pwd)) score++
+    const map = [
+      { label: 'Too weak', color: 'bg-red-500', text: 'text-red-600' },
+      { label: 'Weak', color: 'bg-orange-500', text: 'text-orange-600' },
+      { label: 'Fair', color: 'bg-amber-500', text: 'text-amber-600' },
+      { label: 'Good', color: 'bg-lime-500', text: 'text-lime-600' },
+      { label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-600' },
+      { label: 'Very strong', color: 'bg-emerald-600', text: 'text-emerald-700' },
+    ]
+    return { score, ...map[Math.min(score, 5)] }
   }
 
   const handleMenuClick = (label) => {
@@ -611,22 +731,332 @@ function App() {
 
   // Login screen
   if (!loggedIn) {
+    const isSignup = authMode === 'signup'
+    const pwdStrength = getPwdStrength(authForm.password)
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-14 h-14 rounded-full bg-[#0d1b4c] flex items-center justify-center mb-3">
-              <div className="w-6 h-6 border-2 border-white rotate-45"></div>
+      <div className="min-h-screen flex bg-gray-50 font-sans">
+        {/* Left brand panel */}
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0a1547] via-[#0d1b4c] to-[#1e3a8a] text-white p-12 flex-col justify-between">
+          {/* Decorative blobs */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl"></div>
+          <div className="absolute -bottom-32 -right-20 w-[480px] h-[480px] rounded-full bg-indigo-400/15 blur-3xl"></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-purple-500/10 blur-3xl"></div>
+
+          {/* Subtle grid */}
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+
+          {/* Top: Logo */}
+          <div className="relative flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl border-2 border-white/80 flex items-center justify-center bg-white/5 backdrop-blur">
+              <div className="w-5 h-5 border-2 border-white rotate-45"></div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">AMS Login</h1>
-            <p className="text-sm text-gray-500 mt-1">Asset Management System</p>
+            <div className="leading-tight">
+              <div className="text-2xl font-black tracking-tight">AMS</div>
+              <div className="text-[10px] font-bold tracking-[0.2em] text-white/70">ASSET MANAGEMENT SYSTEM</div>
+            </div>
           </div>
-          <button
-            onClick={handleLogin}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            Sign In as Admin
-          </button>
+
+          {/* Middle: Heading & features */}
+          <div className="relative max-w-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-[11px] font-semibold mb-6">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              Trusted by 5,000+ companies worldwide
+            </div>
+            <h1 className="text-5xl xl:text-6xl font-black leading-[1.05] tracking-tight mb-5">
+              Manage every<br />
+              <span className="bg-gradient-to-r from-blue-200 via-cyan-200 to-emerald-200 bg-clip-text text-transparent">asset</span> with confidence.
+            </h1>
+            <p className="text-base text-blue-100/90 leading-relaxed mb-8">
+              Track, assign, maintain and report on every device in your organization — all from a single, elegant control center.
+            </p>
+            <div className="space-y-3.5">
+              {[
+                { icon: CheckCircle, t: 'Real-time inventory across 14+ modules' },
+                { icon: CheckCircle, t: 'QR-code scanning, audit logs & maintenance alerts' },
+                { icon: CheckCircle, t: 'Role-based access, 2FA & encrypted at rest' },
+              ].map((f, i) => {
+                const Icon = f.icon
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-emerald-400/20 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-emerald-300" />
+                    </div>
+                    <span className="text-sm text-white/90 font-medium">{f.t}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Bottom: testimonial */}
+          <div className="relative">
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-5 max-w-md">
+              <div className="flex gap-0.5 mb-2 text-amber-300">{'★★★★★'}</div>
+              <p className="text-sm leading-relaxed text-white/95">
+                &ldquo;AMS transformed how our IT team manages 12,000+ devices. The QR workflow alone saves us 20 hours a week.&rdquo;
+              </p>
+              <div className="flex items-center gap-3 mt-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">PN</div>
+                <div>
+                  <div className="text-sm font-bold">Priya Nair</div>
+                  <div className="text-xs text-white/70">Head of IT · Acme Corp</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right form panel */}
+        <div className="flex-1 flex flex-col px-6 sm:px-10 md:px-16 py-8 md:py-10 overflow-y-auto">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-8">
+            <div className="w-11 h-11 rounded-xl bg-[#0d1b4c] flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white rotate-45"></div>
+            </div>
+            <div>
+              <div className="text-lg font-black text-gray-900 tracking-tight">AMS</div>
+              <div className="text-[9px] font-bold tracking-widest text-gray-500">ASSET MANAGEMENT SYSTEM</div>
+            </div>
+          </div>
+
+          {/* Top right: switch */}
+          <div className="flex items-center justify-end text-sm text-gray-500 mb-8 md:mb-12">
+            <span className="hidden sm:inline mr-2">{isSignup ? 'Already have an account?' : "Don't have an account?"}</span>
+            <button
+              onClick={() => { setAuthMode(isSignup ? 'signin' : 'signup'); setAuthError(''); }}
+              className="font-bold text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              {isSignup ? 'Sign in' : 'Create one'}
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="w-full max-w-md mx-auto">
+              <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight mb-2 leading-none">
+                {isSignup ? 'Create your account' : 'Welcome back'}
+              </h2>
+              <p className="text-sm md:text-base text-gray-500 mb-7">
+                {isSignup
+                  ? 'Get started in less than 60 seconds — no credit card required.'
+                  : 'Sign in to access your asset management dashboard.'}
+              </p>
+
+              {/* Admin one-click */}
+              <button
+                onClick={handleAdminLogin}
+                disabled={authLoading}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 text-gray-800 font-bold text-sm transition-all duration-200 mb-5 disabled:opacity-60 disabled:cursor-not-allowed group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <span>Quick Sign In as Admin</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 ml-1">DEMO</span>
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-px flex-1 bg-gray-200"></div>
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">or {isSignup ? 'sign up' : 'sign in'} with email</span>
+                <div className="h-px flex-1 bg-gray-200"></div>
+              </div>
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                {/* Error */}
+                {authError && (
+                  <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs font-medium">{authError}</p>
+                  </div>
+                )}
+
+                {isSignup && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Full Name</label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={authForm.name}
+                        onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
+                        placeholder="John Doe"
+                        autoComplete="name"
+                        className="w-full pl-10 pr-3.5 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      value={authForm.email}
+                      onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+                      placeholder="you@company.com"
+                      autoComplete="email"
+                      className="w-full pl-10 pr-3.5 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-gray-700">Password</label>
+                    {!isSignup && (
+                      <button type="button" className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">Forgot?</button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPwd ? 'text' : 'password'}
+                      value={authForm.password}
+                      onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                      placeholder={isSignup ? 'At least 6 characters' : 'Enter your password'}
+                      autoComplete={isSignup ? 'new-password' : 'current-password'}
+                      className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPwd(!showPwd)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1"
+                      tabIndex={-1}
+                    >
+                      {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {isSignup && authForm.password && (
+                    <div className="mt-2">
+                      <div className="flex gap-1">
+                        {[1,2,3,4,5].map(i => (
+                          <div key={i} className={`flex-1 h-1 rounded-full transition-colors ${i <= pwdStrength.score ? pwdStrength.color : 'bg-gray-100'}`}></div>
+                        ))}
+                      </div>
+                      <p className={`text-[11px] font-semibold mt-1 ${pwdStrength.text}`}>Password strength: {pwdStrength.label}</p>
+                    </div>
+                  )}
+                </div>
+
+                {isSignup && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Confirm Password</label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showPwd2 ? 'text' : 'password'}
+                        value={authForm.confirmPassword}
+                        onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
+                        placeholder="Re-enter your password"
+                        autoComplete="new-password"
+                        className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPwd2(!showPwd2)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1"
+                        tabIndex={-1}
+                      >
+                        {showPwd2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {authForm.confirmPassword && (
+                      <p className={`text-[11px] font-semibold mt-1.5 flex items-center gap-1 ${authForm.password === authForm.confirmPassword ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {authForm.password === authForm.confirmPassword
+                          ? (<><CheckCircle className="w-3.5 h-3.5" /> Passwords match</>)
+                          : (<><AlertCircle className="w-3.5 h-3.5" /> Passwords do not match</>)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 pt-1">
+                  {isSignup ? (
+                    <>
+                      <input
+                        id="terms"
+                        type="checkbox"
+                        checked={acceptTerms}
+                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed select-none">
+                        I agree to the <a href="#" className="font-bold text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="font-bold text-blue-600 hover:underline">Privacy Policy</a>.
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        id="remember"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="remember" className="text-xs text-gray-600 leading-relaxed select-none">
+                        Keep me signed in on this device for 30 days
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold tracking-wide shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.99] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {authLoading ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                        <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      {isSignup ? 'Creating account…' : 'Signing in…'}
+                    </>
+                  ) : (
+                    <>
+                      {isSignup ? 'Create Account' : 'Sign In'}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Social row */}
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                {[
+                  { name: 'Google', svg: (<svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.97 10.97 0 001 12c0 1.77.42 3.44 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>) },
+                  { name: 'Microsoft', svg: (<svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#F25022" d="M2 2h9.5v9.5H2z"/><path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z"/><path fill="#00A4EF" d="M2 12.5h9.5V22H2z"/><path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z"/></svg>) },
+                  { name: 'GitHub', svg: (<svg className="w-4 h-4" viewBox="0 0 24 24" fill="#181717"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.04 11.04 0 015.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.41-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>) },
+                ].map(p => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-xs font-bold text-gray-700 transition-colors"
+                  >
+                    {p.svg}
+                    <span className="hidden sm:inline">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400">
+            <div>© 2026 AMS. All rights reserved.</div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-gray-700">Privacy</a>
+              <a href="#" className="hover:text-gray-700">Terms</a>
+              <a href="#" className="hover:text-gray-700">Support</a>
+              <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                All systems operational
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -795,8 +1225,8 @@ function App() {
                       <User className="w-5 h-5" />
                     </div>
                     <div className="leading-tight text-left">
-                      <div className="text-sm font-semibold text-gray-900">Admin User</div>
-                      <div className="text-xs text-gray-500">Administrator</div>
+                      <div className="text-sm font-semibold text-gray-900">{currentUser.name}</div>
+                      <div className="text-xs text-gray-500">{currentUser.role}</div>
                     </div>
                     <ChevronDown
                       className={`w-4 h-4 text-gray-500 transition-transform ${
@@ -814,8 +1244,8 @@ function App() {
                             <User className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <div className="font-semibold">Admin User</div>
-                            <div className="text-xs text-white/80">Administrator</div>
+                            <div className="font-semibold">{currentUser.name}</div>
+                            <div className="text-xs text-white/80">{currentUser.role}</div>
                           </div>
                         </div>
                       </div>
@@ -824,7 +1254,7 @@ function App() {
                       <div className="p-4 space-y-3 border-b border-gray-100">
                         <div className="flex items-center gap-3 text-sm">
                           <Mail className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-700">admin@ams.com</span>
+                          <span className="text-gray-700">{currentUser.email}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                           <Shield className="w-4 h-4 text-gray-400" />
@@ -2461,7 +2891,7 @@ function App() {
                       <div className="flex items-start justify-between flex-wrap gap-3">
                         <div>
                           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-                          <p className="text-sm text-gray-500 mt-1">Welcome back, Admin User!</p>
+                          <p className="text-sm text-gray-500 mt-1">Welcome back, {currentUser.name}!</p>
                         </div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <button
