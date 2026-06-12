@@ -38,7 +38,26 @@ import {
   Droplet,
   Printer,
   RotateCw,
+  Check,
 } from 'lucide-react'
+
+const dummyMaintenance = [
+  { id: 'M2001', assetId: 'A1004', assetName: 'Samsung 24" Monitor', type: 'Hardware Issue', serviceDate: '2024-05-10', nextDue: '2024-06-10', status: 'Completed' },
+  { id: 'M2002', assetId: 'A1006', assetName: 'Epson Projector', type: 'Cleaning', serviceDate: '2024-05-12', nextDue: '2024-06-12', status: 'Completed' },
+  { id: 'M2003', assetId: 'A1001', assetName: 'Dell Latitude 5440', type: 'Software Update', serviceDate: '2024-05-15', nextDue: '2024-06-15', status: 'In Progress' },
+  { id: 'M2004', assetId: 'A1002', assetName: 'HP LaserJet Pro', type: 'Toner Replacement', serviceDate: '2024-05-18', nextDue: '2024-06-18', status: 'Pending' },
+  { id: 'M2005', assetId: 'A1007', assetName: 'Lenovo ThinkPad E14', type: 'Hardware Issue', serviceDate: '2024-05-20', nextDue: '2024-06-20', status: 'Pending' },
+  { id: 'M2006', assetId: 'A1009', assetName: 'Apple MacBook Pro', type: 'Battery Replacement', serviceDate: '2024-05-22', nextDue: '2024-06-22', status: 'Completed' },
+  { id: 'M2007', assetId: 'A1011', assetName: 'Canon Scanner', type: 'Cleaning', serviceDate: '2024-05-24', nextDue: '2024-06-24', status: 'In Progress' },
+  { id: 'M2008', assetId: 'A1003', assetName: 'Dell OptiPlex 7090', type: 'OS Reinstall', serviceDate: '2024-05-26', nextDue: '2024-06-26', status: 'Pending' },
+  { id: 'M2009', assetId: 'A1014', assetName: 'LG UltraWide Monitor', type: 'Calibration', serviceDate: '2024-05-28', nextDue: '2024-06-28', status: 'Completed' },
+  { id: 'M2010', assetId: 'A1015', assetName: 'HP EliteBook 840', type: 'Keyboard Repair', serviceDate: '2024-05-30', nextDue: '2024-06-30', status: 'In Progress' },
+  { id: 'M2011', assetId: 'A1018', assetName: 'Xerox Photocopier', type: 'Drum Replacement', serviceDate: '2024-06-02', nextDue: '2024-07-02', status: 'Pending' },
+  { id: 'M2012', assetId: 'A1020', assetName: 'Logitech Conference Cam', type: 'Firmware Update', serviceDate: '2024-06-04', nextDue: '2024-07-04', status: 'Completed' },
+  { id: 'M2013', assetId: 'A1022', assetName: 'Acer Aspire Desktop', type: 'Power Supply', serviceDate: '2024-06-06', nextDue: '2024-07-06', status: 'In Progress' },
+  { id: 'M2014', assetId: 'A1025', assetName: 'Brother MFC Printer', type: 'Ink Cartridge', serviceDate: '2024-06-08', nextDue: '2024-07-08', status: 'Pending' },
+  { id: 'M2015', assetId: 'A1028', assetName: 'iPad Pro 12.9"', type: 'Screen Replacement', serviceDate: '2024-06-10', nextDue: '2024-07-10', status: 'Completed' },
+]
 
 // Donut chart component using SVG
 function DonutChart({ data, size = 200, strokeWidth = 36 }) {
@@ -133,6 +152,10 @@ function App() {
   const [fromDate, setFromDate] = useState('2024-01-01')
   const [toDate, setToDate] = useState('2024-12-31')
   const [reportGenerated, setReportGenerated] = useState(0)
+
+  // Maintenance state
+  const [maintPage, setMaintPage] = useState(1)
+  const MAINT_PER_PAGE = 5
 
   const [form, setForm] = useState({
     assetName: '',
@@ -999,6 +1022,149 @@ function App() {
                         </div>
                       </div>
                     </div>
+                  )
+                })()
+              ) : activeMenu === 'Maintenance' ? (
+                (() => {
+                  const totalPages = Math.max(1, Math.ceil(dummyMaintenance.length / MAINT_PER_PAGE))
+                  const currentPage = Math.min(maintPage, totalPages)
+                  const startIdx = (currentPage - 1) * MAINT_PER_PAGE
+                  const pageRows = dummyMaintenance.slice(startIdx, startIdx + MAINT_PER_PAGE)
+                  const showFrom = startIdx + 1
+                  const showTo = Math.min(startIdx + MAINT_PER_PAGE, dummyMaintenance.length)
+
+                  const statusBadge = (status) => {
+                    if (status === 'Completed')
+                      return 'bg-green-100 text-green-700 border border-green-200'
+                    if (status === 'In Progress')
+                      return 'bg-orange-100 text-orange-700 border border-orange-200'
+                    return 'bg-amber-100 text-amber-700 border border-amber-200'
+                  }
+
+                  const formatDate = (d) => {
+                    const parts = d.split('-')
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`
+                  }
+
+                  return (
+                    <>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Maintenance</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Maintenance
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => alert('Add Maintenance form would open here')}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Maintenance
+                        </button>
+                      </div>
+
+                      {/* Table Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200">
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Maintenance ID</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset ID</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset Name</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Maintenance Type</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Service Date</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Next Due Date</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {pageRows.map((m) => (
+                                <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{m.id}</td>
+                                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{m.assetId}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-800">{m.assetName}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{m.type}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{formatDate(m.serviceDate)}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{formatDate(m.nextDue)}</td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold ${statusBadge(m.status)}`}>
+                                      {m.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => alert(`Edit ${m.id}`)}
+                                        title="Edit"
+                                        className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                      >
+                                        <Pencil className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => alert(`Mark ${m.id} as completed`)}
+                                        title="Mark Complete"
+                                        className="w-8 h-8 rounded-md bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                      >
+                                        <Check className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          if (confirm(`Delete ${m.id}?`)) alert('Deleted (demo)')
+                                        }}
+                                        title="Delete"
+                                        className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-wrap gap-3">
+                          <p className="text-sm text-gray-600">
+                            Showing {showFrom} to {showTo} of {dummyMaintenance.length} entries
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setMaintPage((p) => Math.max(1, p - 1))}
+                              disabled={currentPage === 1}
+                              className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                              <button
+                                key={p}
+                                onClick={() => setMaintPage(p)}
+                                className={`w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center transition-colors ${
+                                  p === currentPage
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'border border-gray-200 text-gray-700 hover:bg-gray-100'
+                                }`}
+                              >
+                                {p}
+                              </button>
+                            ))}
+                            <button
+                              onClick={() => setMaintPage((p) => Math.min(totalPages, p + 1))}
+                              disabled={currentPage === totalPages}
+                              className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )
                 })()
               ) : (
