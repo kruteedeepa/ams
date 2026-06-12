@@ -66,6 +66,24 @@ import {
   Mouse,
 } from 'lucide-react'
 
+const dummyAssignments = [
+  { id: 'AS5001', assetId: 'A1001', assetName: 'Dell Latitude 5440', empId: 'E1001', employee: 'John Doe', department: 'IT Department', assignedDate: '14-02-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5002', assetId: 'A1003', assetName: 'Apple MacBook Pro', empId: 'E1006', employee: 'Sarah Wilson', department: 'Design Team', assignedDate: '21-01-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5003', assetId: 'A1005', assetName: 'Lenovo ThinkPad E14', empId: 'E1003', employee: 'Robert Brown', department: 'Finance', assignedDate: '10-03-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5004', assetId: 'A1007', assetName: 'iPhone 15 Pro', empId: 'E1007', employee: 'James Taylor', department: 'Sales', assignedDate: '02-04-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5005', assetId: 'A1009', assetName: 'iPad Pro 12.9"', empId: 'E1012', employee: 'Sophia Garcia', department: 'Marketing', assignedDate: '28-02-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5006', assetId: 'A1011', assetName: 'Dell OptiPlex 7090', empId: 'E1010', employee: 'Olivia Anderson', department: 'Finance', assignedDate: '10-09-2023', returnDate: '-', status: 'Active' },
+  { id: 'AS5007', assetId: 'A1015', assetName: 'LG UltraWide 34"', empId: 'E1014', employee: 'Isabella Allen', department: 'Design Team', assignedDate: '10-02-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5008', assetId: 'A1016', assetName: 'Dell P2422H Monitor', empId: 'E1020', employee: 'Charlotte Scott', department: 'Sales', assignedDate: '15-03-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5009', assetId: 'A1017', assetName: 'Samsung Galaxy S23', empId: 'E1011', employee: 'William Thomas', department: 'Operations', assignedDate: '12-04-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5010', assetId: 'A1019', assetName: 'Lenovo Yoga 9i', empId: 'E1019', employee: 'Alexander Hill', department: 'IT Department', assignedDate: '28-03-2024', returnDate: '-', status: 'Active' },
+  { id: 'AS5011', assetId: 'A1004', assetName: 'Samsung 24" Monitor', empId: 'E1005', employee: 'Mike Johnson', department: 'IT Department', assignedDate: '12-08-2023', returnDate: '20-04-2024', status: 'Returned' },
+  { id: 'AS5012', assetId: 'A1001', assetName: 'Dell Latitude 5440', empId: 'E1005', employee: 'Mike Johnson', department: 'IT Department', assignedDate: '10-01-2024', returnDate: '15-02-2024', status: 'Returned' },
+  { id: 'AS5013', assetId: 'A1002', assetName: 'HP LaserJet Pro', empId: 'E1004', employee: 'David Lee', department: 'HR Department', assignedDate: '20-12-2023', returnDate: '18-03-2024', status: 'Returned' },
+  { id: 'AS5014', assetId: 'A1013', assetName: 'HP Pavilion 24', empId: 'E1016', employee: 'Mia King', department: 'Reception', assignedDate: '01-05-2024', returnDate: '01-06-2024', status: 'Overdue' },
+  { id: 'AS5015', assetId: 'A1020', assetName: 'HP ProBook 450 G10', empId: 'E1013', employee: 'Benjamin Hall', department: 'Sales', assignedDate: '01-06-2024', returnDate: '08-06-2024', status: 'Overdue' },
+]
+
 const generateAssetHistory = (asset) => {
   const pastUsers = ['Mike Johnson', 'Sarah Wilson', 'David Lee', 'Emily Davis', 'James Taylor', 'Sophia Garcia', 'Daniel Martinez', 'William Thomas', 'Isabella Allen', 'Henry Wright']
   const idx = parseInt(asset.id.slice(1)) % pastUsers.length
@@ -271,6 +289,14 @@ function App() {
   // Categories state
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [catSearch, setCatSearch] = useState('')
+
+  // Asset Assignment state
+  const [assignFilter, setAssignFilter] = useState('All')
+  const [assignSearch, setAssignSearch] = useState('')
+  const [assignPage, setAssignPage] = useState(1)
+  const ASSIGN_PER_PAGE = 6
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [newAssign, setNewAssign] = useState({ assetId: '', empId: '', returnDate: '' })
 
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
@@ -2449,6 +2475,264 @@ function App() {
                           </table>
                         </div>
                       </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Asset Assignment' ? (
+                (() => {
+                  const filtered = dummyAssignments.filter((a) => {
+                    const inFilter = assignFilter === 'All' || a.status === assignFilter
+                    const q = assignSearch.toLowerCase()
+                    const inSearch = !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q) || a.department.toLowerCase().includes(q)
+                    return inFilter && inSearch
+                  })
+                  const totalPages = Math.max(1, Math.ceil(filtered.length / ASSIGN_PER_PAGE))
+                  const currentPage = Math.min(assignPage, totalPages)
+                  const startIdx = (currentPage - 1) * ASSIGN_PER_PAGE
+                  const pageRows = filtered.slice(startIdx, startIdx + ASSIGN_PER_PAGE)
+
+                  const stats = [
+                    { label: 'Total Assignments', value: dummyAssignments.length, icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Active', value: dummyAssignments.filter(a => a.status === 'Active').length, icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Returned', value: dummyAssignments.filter(a => a.status === 'Returned').length, icon: RotateCw, color: 'text-gray-500', bg: 'bg-gray-100' },
+                    { label: 'Overdue', value: dummyAssignments.filter(a => a.status === 'Overdue').length, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-100' },
+                  ]
+                  const filters = ['All', 'Active', 'Returned', 'Overdue']
+                  const statusBadge = (s) =>
+                    s === 'Active' ? 'bg-green-100 text-green-700 border-green-200'
+                    : s === 'Returned' ? 'bg-gray-100 text-gray-700 border-gray-200'
+                    : 'bg-red-100 text-red-700 border-red-200'
+
+                  const handleAssignSubmit = () => {
+                    if (!newAssign.assetId || !newAssign.empId) {
+                      alert('Please select an asset and an employee')
+                      return
+                    }
+                    const asset = dummyAssets.find(a => a.id === newAssign.assetId)
+                    const emp = dummyEmployees.find(e => e.id === newAssign.empId)
+                    alert(`✓ ${asset?.name} assigned to ${emp?.name} (demo — not persisted)`)
+                    setShowAssignModal(false)
+                    setNewAssign({ assetId: '', empId: '', returnDate: '' })
+                  }
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Asset Assignment</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Asset Assignment
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setShowAssignModal(true)}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Assign New Asset
+                        </button>
+                      </div>
+
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => {
+                          const Icon = s.icon
+                          return (
+                            <div
+                              key={i}
+                              onClick={() => { setAssignFilter(s.label === 'Total Assignments' ? 'All' : s.label); setAssignPage(1) }}
+                              className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                            >
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-0.5">{s.value}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Table */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-gray-100 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {filters.map((f) => (
+                              <button
+                                key={f}
+                                onClick={() => { setAssignFilter(f); setAssignPage(1) }}
+                                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                  assignFilter === f
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                {f}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="relative w-full sm:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={assignSearch}
+                              onChange={(e) => { setAssignSearch(e.target.value); setAssignPage(1) }}
+                              placeholder="Search assignments..."
+                              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200">
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assignment ID</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned Date</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Return Date</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {pageRows.length === 0 ? (
+                                <tr>
+                                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">No assignments found</td>
+                                </tr>
+                              ) : (
+                                pageRows.map((a) => (
+                                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-semibold text-blue-600">{a.id}</td>
+                                    <td className="px-6 py-4">
+                                      <button onClick={() => { setSelectedAssetId(a.assetId); setDetailsTab('Assignment History') }} className="text-left">
+                                        <p className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">{a.assetName}</p>
+                                        <p className="text-xs text-blue-600 font-medium">{a.assetId}</p>
+                                      </button>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
+                                          {a.employee.split(' ').map(n => n[0]).join('').slice(0,2)}
+                                        </div>
+                                        <div className="leading-tight">
+                                          <p className="text-sm font-semibold text-gray-800">{a.employee}</p>
+                                          <p className="text-xs text-gray-500">{a.empId}</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{a.department}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{a.assignedDate}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{a.returnDate}</td>
+                                    <td className="px-6 py-4">
+                                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${statusBadge(a.status)}`}>
+                                        {a.status === 'Overdue' && <AlertTriangle className="w-3 h-3" />}
+                                        {a.status}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <button onClick={() => { setSelectedAssetId(a.assetId); setDetailsTab('Assignment History') }} title="View" className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                        {a.status === 'Active' || a.status === 'Overdue' ? (
+                                          <button onClick={() => { if (confirm(`Mark ${a.assetName} as returned by ${a.employee}?`)) alert('Returned (demo)') }} title="Mark Returned" className="w-8 h-8 rounded-md bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                            <RotateCw className="w-4 h-4" />
+                                          </button>
+                                        ) : (
+                                          <button title="Already returned" disabled className="w-8 h-8 rounded-md bg-gray-200 text-gray-400 flex items-center justify-center cursor-not-allowed">
+                                            <Check className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                        <button onClick={() => { if (confirm(`Delete assignment ${a.id}?`)) alert('Deleted (demo)') }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-wrap gap-3">
+                          <p className="text-sm text-gray-600">
+                            Showing {filtered.length === 0 ? 0 : startIdx + 1} to {Math.min(startIdx + ASSIGN_PER_PAGE, filtered.length)} of {filtered.length} entries
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setAssignPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors">
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                              <button key={p} onClick={() => setAssignPage(p)} className={`w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center transition-colors ${p === currentPage ? 'bg-blue-600 text-white shadow-sm' : 'border border-gray-200 text-gray-700 hover:bg-gray-100'}`}>
+                                {p}
+                              </button>
+                            ))}
+                            <button onClick={() => setAssignPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors">
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Assign Modal */}
+                      {showAssignModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowAssignModal(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">Assign New Asset</h3>
+                              <button onClick={() => setShowAssignModal(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Select Asset <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                  <select value={newAssign.assetId} onChange={(e) => setNewAssign({ ...newAssign, assetId: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 pr-10">
+                                    <option value="">Choose available asset</option>
+                                    {dummyAssets.filter(a => a.status === 'Available').map(a => (
+                                      <option key={a.id} value={a.id}>{a.id} — {a.name} ({a.category})</option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Select Employee <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                  <select value={newAssign.empId} onChange={(e) => setNewAssign({ ...newAssign, empId: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 pr-10">
+                                    <option value="">Choose employee</option>
+                                    {dummyEmployees.map(e => (
+                                      <option key={e.id} value={e.id}>{e.id} — {e.name} ({e.department})</option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Expected Return Date</label>
+                                <input type="date" value={newAssign.returnDate} onChange={(e) => setNewAssign({ ...newAssign, returnDate: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700" />
+                                <p className="text-xs text-gray-500 mt-1">Leave blank for indefinite assignment</p>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setShowAssignModal(false)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">
+                                Cancel
+                              </button>
+                              <button onClick={handleAssignSubmit} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                                <UserPlus className="w-4 h-4" />
+                                Assign Asset
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })()
