@@ -39,7 +39,46 @@ import {
   Printer,
   RotateCw,
   Check,
+  Edit3,
+  QrCode as QrIcon,
+  Printer as PrintIcon,
+  ArrowLeft,
+  Eye,
+  Camera,
+  CheckCircle2,
+  Smartphone,
 } from 'lucide-react'
+
+const dummyAssets = [
+  { id: 'A1001', name: 'Dell Latitude 5440', category: 'Laptop', manufacturer: 'Dell Latitude 5440', serial: 'DLS44OY133456', model: 'Latitude 5440', purchaseDate: '2024-02-15', purchasePrice: 75000, vendor: 'Dell India Pvt. Ltd.', warranty: '2026-02-15', location: 'IT Department', description: 'Dell Latitude 5440 Laptop', status: 'Assigned', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
+  { id: 'A1002', name: 'HP LaserJet Pro', category: 'Printer', manufacturer: 'HP LaserJet Pro M404', serial: 'HPLJ778899', model: 'M404dn', purchaseDate: '2023-11-05', purchasePrice: 22000, vendor: 'HP India', warranty: '2025-11-05', location: 'Reception', description: 'Office monochrome laser printer', status: 'Available', image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&q=80' },
+  { id: 'A1003', name: 'Apple MacBook Pro', category: 'Laptop', manufacturer: 'Apple MacBook Pro 14"', serial: 'APMBP223344', model: 'M2 Pro 14"', purchaseDate: '2024-01-20', purchasePrice: 215000, vendor: 'Apple India', warranty: '2026-01-20', location: 'Design Team', description: 'MacBook Pro for designers', status: 'Assigned', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=80' },
+  { id: 'A1004', name: 'Samsung 24" Monitor', category: 'Monitor', manufacturer: 'Samsung S24R350', serial: 'SMS24R998877', model: 'S24R350', purchaseDate: '2023-08-12', purchasePrice: 14500, vendor: 'Samsung India', warranty: '2025-08-12', location: 'IT Department', description: '24-inch Full HD IPS monitor', status: 'Maintenance', image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&q=80' },
+  { id: 'A1005', name: 'Lenovo ThinkPad E14', category: 'Laptop', manufacturer: 'Lenovo ThinkPad E14', serial: 'LNTP445566', model: 'E14 Gen 4', purchaseDate: '2024-03-10', purchasePrice: 68000, vendor: 'Lenovo India', warranty: '2026-03-10', location: 'Finance', description: 'Business laptop for finance team', status: 'Assigned', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
+  { id: 'A1006', name: 'Epson Projector', category: 'Projector', manufacturer: 'Epson EB-X51', serial: 'EPPRJ112233', model: 'EB-X51', purchaseDate: '2023-06-18', purchasePrice: 42000, vendor: 'Epson India', warranty: '2025-06-18', location: 'Conference Room', description: 'XGA conference room projector', status: 'Available', image: 'https://images.unsplash.com/photo-1626218174358-7769486beb39?w=600&q=80' },
+]
+
+const assignmentHistory = {
+  A1001: [
+    { name: 'John Doe', assignedDate: '2024-02-16', returnedDate: null, status: 'Current' },
+    { name: 'Mike Johnson', assignedDate: '2024-01-10', returnedDate: '2024-02-15', status: 'Returned' },
+    { name: 'Sarah Wilson', assignedDate: '2023-09-05', returnedDate: '2024-01-08', status: 'Returned' },
+  ],
+}
+const maintenanceHistory = {
+  A1001: [
+    { id: 'M2003', type: 'Software Update', date: '2024-05-15', status: 'In Progress' },
+    { id: 'M1991', type: 'Battery Check', date: '2024-03-22', status: 'Completed' },
+  ],
+}
+const activityLog = {
+  A1001: [
+    { text: 'Assigned to John Doe', time: '2024-02-16 10:30 AM' },
+    { text: 'Returned by Mike Johnson', time: '2024-02-15 04:12 PM' },
+    { text: 'Software update scheduled', time: '2024-05-15 09:00 AM' },
+    { text: 'Asset created in inventory', time: '2024-02-15 11:00 AM' },
+  ],
+}
 
 const dummyMaintenance = [
   { id: 'M2001', assetId: 'A1004', assetName: 'Samsung 24" Monitor', type: 'Hardware Issue', serviceDate: '2024-05-10', nextDue: '2024-06-10', status: 'Completed' },
@@ -156,6 +195,30 @@ function App() {
   // Maintenance state
   const [maintPage, setMaintPage] = useState(1)
   const MAINT_PER_PAGE = 5
+
+  // Assets view state: 'list' | 'add' | 'details'
+  const [assetView, setAssetView] = useState('list')
+  const [selectedAssetId, setSelectedAssetId] = useState(null)
+  const [detailsTab, setDetailsTab] = useState('Assignment History')
+
+  // QR Scanner state: 'idle' | 'scanning' | 'scanned'
+  const [qrState, setQrState] = useState('idle')
+  const qrTimerRef = useRef(null)
+
+  const startScan = () => {
+    setQrState('scanning')
+    qrTimerRef.current = setTimeout(() => {
+      setQrState('scanned')
+    }, 2800)
+  }
+  const stopScan = () => {
+    if (qrTimerRef.current) clearTimeout(qrTimerRef.current)
+    setQrState('idle')
+  }
+  const resetScan = () => {
+    if (qrTimerRef.current) clearTimeout(qrTimerRef.current)
+    setQrState('idle')
+  }
 
   const [form, setForm] = useState({
     assetName: '',
@@ -1167,6 +1230,232 @@ function App() {
                     </>
                   )
                 })()
+              ) : activeMenu === 'QR Code Scanner' ? (
+                qrState !== 'scanned' ? (
+                  <>
+                    {/* Header */}
+                    <div className="mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900">QR Code Scanner</h2>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Dashboard <span className="mx-1">/</span> QR Code Scanner
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Scanner Box */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-6">
+                        <h3 className="text-center text-lg font-bold text-gray-900 mb-5">Scan Asset QR Code</h3>
+
+                        <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-gray-900">
+                          {/* Background: blurred scene */}
+                          <div
+                            className="absolute inset-0 bg-cover bg-center"
+                            style={{
+                              backgroundImage:
+                                "url('https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=60')",
+                              filter: 'blur(10px) brightness(0.45)',
+                              transform: 'scale(1.1)',
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+
+                          {/* Corner brackets */}
+                          {qrState !== 'idle' && (
+                            <>
+                              <span className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-green-400 rounded-tl-md" />
+                              <span className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-green-400 rounded-tr-md" />
+                              <span className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-green-400 rounded-bl-md" />
+                              <span className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-green-400 rounded-br-md" />
+                              {/* Animated scan line */}
+                              <div className="absolute inset-x-10 top-6 bottom-6 overflow-hidden pointer-events-none">
+                                <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_20px_2px_rgba(74,222,128,0.7)] animate-scan-line" />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Idle state center */}
+                          {qrState === 'idle' && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/80">
+                              <Camera className="w-14 h-14 mb-3 text-white/70" />
+                              <p className="text-sm font-medium">Camera is off</p>
+                              <p className="text-xs text-white/60 mt-1">Click "Start Camera" to scan</p>
+                            </div>
+                          )}
+
+                          {/* Scanning state center */}
+                          {qrState === 'scanning' && (
+                            <div className="absolute inset-x-0 bottom-24 flex flex-col items-center text-green-300">
+                              <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm text-xs font-semibold border border-green-400/50">
+                                Scanning...
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-center mt-5">
+                          {qrState === 'idle' ? (
+                            <button
+                              onClick={startScan}
+                              className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                              <Camera className="w-4 h-4" />
+                              Start Camera
+                            </button>
+                          ) : (
+                            <button
+                              onClick={stopScan}
+                              className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+                            >
+                              <Camera className="w-4 h-4" />
+                              Stop Camera
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* How It Works */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
+                        <h3 className="text-lg font-bold text-gray-900 mb-5">How It Works?</h3>
+                        <ol className="space-y-5">
+                          {[
+                            'Click on "Start Camera" button',
+                            'Allow camera access',
+                            'Point camera to QR Code',
+                            'Asset details will appear automatically',
+                          ].map((step, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center">
+                                {i + 1}
+                              </span>
+                              <p className="text-sm text-gray-700 pt-0.5">{step}</p>
+                            </li>
+                          ))}
+                        </ol>
+
+                        {/* Illustration */}
+                        <div className="flex-1 flex items-end justify-center mt-6">
+                          <div className="relative w-full max-w-xs flex items-center justify-center gap-3">
+                            <div className="relative w-32 h-56 rounded-[1.5rem] bg-gradient-to-b from-slate-100 to-slate-200 border-2 border-slate-800 flex items-center justify-center shadow-md">
+                              <div className="w-20 h-20 bg-white rounded-md p-1.5 grid grid-cols-5 grid-rows-5 gap-0.5">
+                                {Array.from({ length: 25 }).map((_, i) => (
+                                  <div key={i} className={`${[0,1,3,4,5,9,15,19,20,21,23,24,7,12,17].includes(i) ? 'bg-slate-900' : 'bg-transparent'} rounded-sm`} />
+                                ))}
+                              </div>
+                              {/* Corner brackets on phone screen */}
+                              <span className="absolute top-7 left-7 w-4 h-4 border-t-2 border-l-2 border-green-500" />
+                              <span className="absolute top-7 right-7 w-4 h-4 border-t-2 border-r-2 border-green-500" />
+                              <span className="absolute bottom-7 left-7 w-4 h-4 border-b-2 border-l-2 border-green-500" />
+                              <span className="absolute bottom-7 right-7 w-4 h-4 border-b-2 border-r-2 border-green-500" />
+                            </div>
+                            <div className="w-28 h-44 rounded-md bg-slate-50 border-2 border-slate-300 flex items-center justify-center">
+                              <QrIcon className="w-16 h-16 text-slate-700" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Scanned Result */
+                  (() => {
+                    const scanned = dummyAssets[0] // A1001 Dell Latitude
+                    return (
+                      <div className="animate-in fade-in duration-500">
+                        {/* Success Header */}
+                        <div className="flex flex-col items-center text-center mb-6">
+                          <div className="w-20 h-20 rounded-full border-4 border-green-500 flex items-center justify-center mb-3">
+                            <CheckCircle2 className="w-12 h-12 text-green-500" strokeWidth={2.5} />
+                          </div>
+                          <h2 className="text-2xl font-bold text-green-600">QR Code Scanned Successfully!</h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Asset ID: <span className="font-bold text-gray-900">{scanned.id}</span>
+                          </p>
+                        </div>
+
+                        {/* Asset Card */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden p-4 min-h-[260px]">
+                            <img src={scanned.image} alt={scanned.name} className="max-h-[260px] object-contain" />
+                          </div>
+                          <div className="space-y-4">
+                            {[
+                              ['Asset Name', scanned.name],
+                              ['Category', scanned.category],
+                              ['Serial Number', scanned.serial],
+                            ].map(([k, v]) => (
+                              <div key={k} className="grid grid-cols-2 gap-2">
+                                <span className="text-sm text-gray-500">{k}</span>
+                                <span className="text-sm font-semibold text-gray-900">{v}</span>
+                              </div>
+                            ))}
+                            <div className="grid grid-cols-2 gap-2 items-center">
+                              <span className="text-sm text-gray-500">Status</span>
+                              <span>
+                                <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                                  {scanned.status}
+                                </span>
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <span className="text-sm text-gray-500">Assigned To</span>
+                              <span className="text-sm font-semibold text-gray-900">John Doe</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <span className="text-sm text-gray-500">Location</span>
+                              <span className="text-sm font-semibold text-gray-900">{scanned.location}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                          <button
+                            onClick={() => alert(`View details of ${scanned.id}`)}
+                            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => alert('Assign asset')}
+                            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            Assign Asset
+                          </button>
+                          <button
+                            onClick={() => alert('Return asset')}
+                            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm"
+                          >
+                            <RotateCw className="w-4 h-4" />
+                            Return Asset
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveMenu('Maintenance')
+                              resetScan()
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-sm"
+                          >
+                            <Wrench className="w-4 h-4" />
+                            Maintenance
+                          </button>
+                        </div>
+
+                        {/* Scan Again */}
+                        <div className="flex justify-center mt-6">
+                          <button
+                            onClick={resetScan}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+                          >
+                            <Camera className="w-4 h-4" />
+                            Scan Another QR Code
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })()
+                )
               ) : (
                 /* Placeholder for other menu items */
                 <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-center">
