@@ -24,7 +24,37 @@ import {
   User,
   Mail,
   Shield,
+  Plus,
+  Filter,
+  Pencil,
+  UserPlus,
+  Trash2,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react'
+
+const dummyEmployees = [
+  { id: 'E1001', name: 'John Doe', department: 'IT Department', designation: 'System Administrator', email: 'john.doe@company.com', phone: '9876543210' },
+  { id: 'E1002', name: 'Mary Smith', department: 'IT Department', designation: 'Software Engineer', email: 'mary.smith@company.com', phone: '9876543211' },
+  { id: 'E1003', name: 'Robert Brown', department: 'Finance', designation: 'Accountant', email: 'robert.brown@company.com', phone: '9876543212' },
+  { id: 'E1004', name: 'David Lee', department: 'HR Department', designation: 'HR Manager', email: 'david.lee@company.com', phone: '9876543213' },
+  { id: 'E1005', name: 'Mike Johnson', department: 'IT Department', designation: 'Network Engineer', email: 'mike.johnson@company.com', phone: '9876543214' },
+  { id: 'E1006', name: 'Sarah Wilson', department: 'Marketing', designation: 'Marketing Lead', email: 'sarah.wilson@company.com', phone: '9876543215' },
+  { id: 'E1007', name: 'James Taylor', department: 'Sales', designation: 'Sales Executive', email: 'james.taylor@company.com', phone: '9876543216' },
+  { id: 'E1008', name: 'Emily Davis', department: 'HR Department', designation: 'Recruiter', email: 'emily.davis@company.com', phone: '9876543217' },
+  { id: 'E1009', name: 'Daniel Martinez', department: 'IT Department', designation: 'DevOps Engineer', email: 'daniel.martinez@company.com', phone: '9876543218' },
+  { id: 'E1010', name: 'Olivia Anderson', department: 'Finance', designation: 'Financial Analyst', email: 'olivia.anderson@company.com', phone: '9876543219' },
+  { id: 'E1011', name: 'William Thomas', department: 'Operations', designation: 'Operations Manager', email: 'william.thomas@company.com', phone: '9876543220' },
+  { id: 'E1012', name: 'Sophia Garcia', department: 'Marketing', designation: 'Content Strategist', email: 'sophia.garcia@company.com', phone: '9876543221' },
+  { id: 'E1013', name: 'Benjamin Hall', department: 'Sales', designation: 'Sales Manager', email: 'benjamin.hall@company.com', phone: '9876543222' },
+  { id: 'E1014', name: 'Isabella Allen', department: 'IT Department', designation: 'QA Engineer', email: 'isabella.allen@company.com', phone: '9876543223' },
+  { id: 'E1015', name: 'Lucas Young', department: 'Finance', designation: 'Auditor', email: 'lucas.young@company.com', phone: '9876543224' },
+  { id: 'E1016', name: 'Mia King', department: 'HR Department', designation: 'HR Executive', email: 'mia.king@company.com', phone: '9876543225' },
+  { id: 'E1017', name: 'Henry Wright', department: 'Operations', designation: 'Logistics Lead', email: 'henry.wright@company.com', phone: '9876543226' },
+  { id: 'E1018', name: 'Amelia Lopez', department: 'Marketing', designation: 'SEO Specialist', email: 'amelia.lopez@company.com', phone: '9876543227' },
+  { id: 'E1019', name: 'Alexander Hill', department: 'IT Department', designation: 'Frontend Developer', email: 'alexander.hill@company.com', phone: '9876543228' },
+  { id: 'E1020', name: 'Charlotte Scott', department: 'Sales', designation: 'Account Executive', email: 'charlotte.scott@company.com', phone: '9876543229' },
+]
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard' },
@@ -49,6 +79,11 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [loggedIn, setLoggedIn] = useState(true)
   const profileRef = useRef(null)
+
+  // Employees state
+  const [empSearch, setEmpSearch] = useState('')
+  const [empPage, setEmpPage] = useState(1)
+  const EMP_PER_PAGE = 5
 
   const [form, setForm] = useState({
     assetName: '',
@@ -565,6 +600,173 @@ function App() {
                     </div>
                   </form>
                 </>
+              ) : activeMenu === 'Employees' ? (
+                (() => {
+                  const filtered = dummyEmployees.filter((e) => {
+                    const q = empSearch.toLowerCase()
+                    return (
+                      e.id.toLowerCase().includes(q) ||
+                      e.name.toLowerCase().includes(q) ||
+                      e.department.toLowerCase().includes(q) ||
+                      e.designation.toLowerCase().includes(q) ||
+                      e.email.toLowerCase().includes(q) ||
+                      e.phone.includes(q)
+                    )
+                  })
+                  const totalPages = Math.max(1, Math.ceil(filtered.length / EMP_PER_PAGE))
+                  const currentPage = Math.min(empPage, totalPages)
+                  const startIdx = (currentPage - 1) * EMP_PER_PAGE
+                  const pageRows = filtered.slice(startIdx, startIdx + EMP_PER_PAGE)
+                  const showFrom = filtered.length === 0 ? 0 : startIdx + 1
+                  const showTo = Math.min(startIdx + EMP_PER_PAGE, filtered.length)
+
+                  return (
+                    <>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Employees</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Employees
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => alert('Add Employee form would open here')}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add Employee
+                          </button>
+                          <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+                            <Filter className="w-4 h-4" />
+                            Filters
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Table Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        {/* Search */}
+                        <div className="p-5 border-b border-gray-100">
+                          <div className="relative max-w-sm">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={empSearch}
+                              onChange={(e) => {
+                                setEmpSearch(e.target.value)
+                                setEmpPage(1)
+                              }}
+                              placeholder="Search employees..."
+                              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200">
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee ID</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Designation</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Phone</th>
+                                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {pageRows.length === 0 ? (
+                                <tr>
+                                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                                    No employees found
+                                  </td>
+                                </tr>
+                              ) : (
+                                pageRows.map((emp) => (
+                                  <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-semibold text-blue-600">{emp.id}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-800">{emp.name}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{emp.department}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{emp.designation}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{emp.email}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{emp.phone}</td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <button
+                                          onClick={() => alert(`Edit ${emp.name}`)}
+                                          title="Edit"
+                                          className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                        >
+                                          <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() => alert(`Assign asset to ${emp.name}`)}
+                                          title="Assign"
+                                          className="w-8 h-8 rounded-md bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                        >
+                                          <UserPlus className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            if (confirm(`Delete ${emp.name}?`)) alert('Deleted (demo)')
+                                          }}
+                                          title="Delete"
+                                          className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-wrap gap-3">
+                          <p className="text-sm text-gray-600">
+                            Showing {showFrom} to {showTo} of {filtered.length} entries
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEmpPage((p) => Math.max(1, p - 1))}
+                              disabled={currentPage === 1}
+                              className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                              <button
+                                key={p}
+                                onClick={() => setEmpPage(p)}
+                                className={`w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center transition-colors ${
+                                  p === currentPage
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'border border-gray-200 text-gray-700 hover:bg-gray-100'
+                                }`}
+                              >
+                                {p}
+                              </button>
+                            ))}
+                            <button
+                              onClick={() => setEmpPage((p) => Math.min(totalPages, p + 1))}
+                              disabled={currentPage === totalPages}
+                              className="w-9 h-9 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()
               ) : (
                 /* Placeholder for other menu items */
                 <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-center">
