@@ -47,6 +47,20 @@ import {
   Camera,
   CheckCircle2,
   Smartphone,
+  AtSign,
+  BellRing,
+  Database,
+  Info,
+  Save,
+  HardDrive,
+  Server,
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
+  AlertTriangle,
+  Activity,
+  Clock,
+  Building2,
 } from 'lucide-react'
 
 const dummyAssets = [
@@ -209,6 +223,36 @@ function App() {
   const [qrState, setQrState] = useState('idle')
   const [scannedAssetIdx, setScannedAssetIdx] = useState(0)
   const qrTimerRef = useRef(null)
+
+  // Settings state
+  const [settingsTab, setSettingsTab] = useState('General Settings')
+  const [generalSettings, setGeneralSettings] = useState({
+    companyName: 'ABC Company Pvt. Ltd.',
+    address: '123, Business Park, Mumbai, India',
+    phone: '+91 9876543210',
+    email: 'info@abccompany.com',
+    currency: 'INR (₹)',
+    dateFormat: 'dd-mm-yyyy',
+    timeZone: '(GMT+05:30) Asia/Kolkata',
+  })
+  const [emailSettings, setEmailSettings] = useState({
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: '587',
+    username: 'notifications@abccompany.com',
+    password: '',
+    fromName: 'AMS Notifications',
+    encryption: 'TLS',
+  })
+  const [notifSettings, setNotifSettings] = useState({
+    emailNotif: true,
+    pushNotif: true,
+    smsNotif: false,
+    assetAssignment: true,
+    maintenanceAlerts: true,
+    warrantyExpiry: true,
+    weeklyReport: false,
+  })
+  const [savedToast, setSavedToast] = useState(false)
 
   const startScan = () => {
     setQrState('scanning')
@@ -1469,8 +1513,662 @@ function App() {
                     )
                   })()
                 )
+              ) : activeMenu === 'Settings' ? (
+                (() => {
+                  const tabs = [
+                    { name: 'General Settings', icon: Settings },
+                    { name: 'Email Settings', icon: AtSign },
+                    { name: 'Notification Settings', icon: BellRing },
+                    { name: 'Backup & Restore', icon: HardDrive },
+                    { name: 'System Information', icon: Info },
+                  ]
+
+                  const handleSave = () => {
+                    setSavedToast(true)
+                    setTimeout(() => setSavedToast(false), 2200)
+                  }
+
+                  const inputCls = 'w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                  const labelCls = 'block text-sm font-semibold text-gray-800 mb-1.5'
+
+                  const Toggle = ({ checked, onChange }) => (
+                    <button
+                      type="button"
+                      onClick={() => onChange(!checked)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  )
+
+                  return (
+                    <>
+                      <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Dashboard <span className="mx-1">/</span> Settings
+                        </p>
+                      </div>
+
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[640px]">
+                        {/* Left tab nav */}
+                        <aside className="w-full md:w-64 flex-shrink-0 border-b md:border-b-0 md:border-r border-gray-200 p-5">
+                          <h3 className="text-lg font-bold text-gray-900 mb-5">Settings</h3>
+                          <nav className="space-y-1">
+                            {tabs.map((t) => {
+                              const Icon = t.icon
+                              const isActive = settingsTab === t.name
+                              return (
+                                <button
+                                  key={t.name}
+                                  onClick={() => setSettingsTab(t.name)}
+                                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-all ${
+                                    isActive
+                                      ? 'bg-blue-50 text-blue-600 shadow-sm'
+                                      : 'text-gray-700 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  {t.name}
+                                </button>
+                              )
+                            })}
+                          </nav>
+                        </aside>
+
+                        {/* Right content */}
+                        <div className="flex-1 p-6 md:p-8 relative">
+                          {savedToast && (
+                            <div className="absolute top-4 right-4 z-20 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-semibold animate-in fade-in slide-in-from-top-2">
+                              <Check className="w-4 h-4" />
+                              Settings saved successfully!
+                            </div>
+                          )}
+
+                          {/* GENERAL SETTINGS */}
+                          {settingsTab === 'General Settings' && (
+                            <div className="animate-in fade-in duration-200">
+                              <h3 className="text-xl font-bold text-gray-900 mb-6">General Settings</h3>
+                              <div className="space-y-5 max-w-3xl">
+                                <div>
+                                  <label className={labelCls}>Company Name</label>
+                                  <input type="text" value={generalSettings.companyName} onChange={(e) => setGeneralSettings({ ...generalSettings, companyName: e.target.value })} className={inputCls} />
+                                </div>
+                                <div>
+                                  <label className={labelCls}>Address</label>
+                                  <input type="text" value={generalSettings.address} onChange={(e) => setGeneralSettings({ ...generalSettings, address: e.target.value })} className={inputCls} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                  <div>
+                                    <label className={labelCls}>Phone Number</label>
+                                    <input type="text" value={generalSettings.phone} onChange={(e) => setGeneralSettings({ ...generalSettings, phone: e.target.value })} className={inputCls} />
+                                  </div>
+                                  <div>
+                                    <label className={labelCls}>Email</label>
+                                    <input type="email" value={generalSettings.email} onChange={(e) => setGeneralSettings({ ...generalSettings, email: e.target.value })} className={inputCls} />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                  <div>
+                                    <label className={labelCls}>Currency</label>
+                                    <div className="relative">
+                                      <select value={generalSettings.currency} onChange={(e) => setGeneralSettings({ ...generalSettings, currency: e.target.value })} className={`${inputCls} appearance-none bg-white pr-10`}>
+                                        <option>INR (₹)</option>
+                                        <option>USD ($)</option>
+                                        <option>EUR (€)</option>
+                                        <option>GBP (£)</option>
+                                        <option>JPY (¥)</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className={labelCls}>Date format</label>
+                                    <div className="relative">
+                                      <select value={generalSettings.dateFormat} onChange={(e) => setGeneralSettings({ ...generalSettings, dateFormat: e.target.value })} className={`${inputCls} appearance-none bg-white pr-10`}>
+                                        <option>dd-mm-yyyy</option>
+                                        <option>mm-dd-yyyy</option>
+                                        <option>yyyy-mm-dd</option>
+                                        <option>dd/mm/yyyy</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="md:max-w-[calc(50%-10px)]">
+                                  <label className={labelCls}>Time Zone</label>
+                                  <div className="relative">
+                                    <select value={generalSettings.timeZone} onChange={(e) => setGeneralSettings({ ...generalSettings, timeZone: e.target.value })} className={`${inputCls} appearance-none bg-white pr-10`}>
+                                      <option>(GMT+05:30) Asia/Kolkata</option>
+                                      <option>(GMT+00:00) UTC</option>
+                                      <option>(GMT-05:00) America/New_York</option>
+                                      <option>(GMT-08:00) America/Los_Angeles</option>
+                                      <option>(GMT+01:00) Europe/London</option>
+                                      <option>(GMT+09:00) Asia/Tokyo</option>
+                                      <option>(GMT+08:00) Asia/Singapore</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* EMAIL SETTINGS */}
+                          {settingsTab === 'Email Settings' && (
+                            <div className="animate-in fade-in duration-200">
+                              <h3 className="text-xl font-bold text-gray-900 mb-6">Email Settings</h3>
+                              <div className="space-y-5 max-w-3xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                  <div>
+                                    <label className={labelCls}>SMTP Host</label>
+                                    <input type="text" value={emailSettings.smtpHost} onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })} className={inputCls} />
+                                  </div>
+                                  <div>
+                                    <label className={labelCls}>SMTP Port</label>
+                                    <input type="text" value={emailSettings.smtpPort} onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: e.target.value })} className={inputCls} />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className={labelCls}>Username</label>
+                                  <input type="text" value={emailSettings.username} onChange={(e) => setEmailSettings({ ...emailSettings, username: e.target.value })} className={inputCls} />
+                                </div>
+                                <div>
+                                  <label className={labelCls}>Password</label>
+                                  <input type="password" placeholder="••••••••" value={emailSettings.password} onChange={(e) => setEmailSettings({ ...emailSettings, password: e.target.value })} className={inputCls} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                  <div>
+                                    <label className={labelCls}>From Name</label>
+                                    <input type="text" value={emailSettings.fromName} onChange={(e) => setEmailSettings({ ...emailSettings, fromName: e.target.value })} className={inputCls} />
+                                  </div>
+                                  <div>
+                                    <label className={labelCls}>Encryption</label>
+                                    <div className="relative">
+                                      <select value={emailSettings.encryption} onChange={(e) => setEmailSettings({ ...emailSettings, encryption: e.target.value })} className={`${inputCls} appearance-none bg-white pr-10`}>
+                                        <option>TLS</option>
+                                        <option>SSL</option>
+                                        <option>None</option>
+                                      </select>
+                                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <button onClick={() => alert('Test email sent to ' + emailSettings.username)} className="px-5 py-2 rounded-lg text-sm font-semibold text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors">
+                                  Send Test Email
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* NOTIFICATION SETTINGS */}
+                          {settingsTab === 'Notification Settings' && (
+                            <div className="animate-in fade-in duration-200">
+                              <h3 className="text-xl font-bold text-gray-900 mb-6">Notification Settings</h3>
+                              <div className="space-y-7 max-w-3xl">
+                                <div>
+                                  <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Channels</h4>
+                                  <div className="space-y-3">
+                                    {[
+                                      { key: 'emailNotif', label: 'Email Notifications', desc: 'Receive notifications via email' },
+                                      { key: 'pushNotif', label: 'Push Notifications', desc: 'Receive push notifications in browser' },
+                                      { key: 'smsNotif', label: 'SMS Notifications', desc: 'Receive notifications via SMS (charges may apply)' },
+                                    ].map((opt) => (
+                                      <div key={opt.key} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                                        <div>
+                                          <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
+                                          <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                                        </div>
+                                        <Toggle checked={notifSettings[opt.key]} onChange={(v) => setNotifSettings({ ...notifSettings, [opt.key]: v })} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">Event Types</h4>
+                                  <div className="space-y-3">
+                                    {[
+                                      { key: 'assetAssignment', label: 'Asset Assignment', desc: 'When an asset is assigned or returned' },
+                                      { key: 'maintenanceAlerts', label: 'Maintenance Alerts', desc: 'Upcoming and overdue maintenance' },
+                                      { key: 'warrantyExpiry', label: 'Warranty Expiry', desc: 'Warranty due in 30 days' },
+                                      { key: 'weeklyReport', label: 'Weekly Summary Report', desc: 'A weekly digest every Monday' },
+                                    ].map((opt) => (
+                                      <div key={opt.key} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                                        <div>
+                                          <p className="text-sm font-semibold text-gray-900">{opt.label}</p>
+                                          <p className="text-xs text-gray-500 mt-0.5">{opt.desc}</p>
+                                        </div>
+                                        <Toggle checked={notifSettings[opt.key]} onChange={(v) => setNotifSettings({ ...notifSettings, [opt.key]: v })} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* BACKUP & RESTORE */}
+                          {settingsTab === 'Backup & Restore' && (
+                            <div className="animate-in fade-in duration-200">
+                              <h3 className="text-xl font-bold text-gray-900 mb-6">Backup & Restore</h3>
+                              <div className="space-y-5 max-w-3xl">
+                                <div className="p-5 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+                                  <Database className="w-5 h-5 text-blue-600 mt-0.5" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold text-gray-900">Last Backup</p>
+                                    <p className="text-xs text-gray-600 mt-1">June 11, 2025 at 02:30 AM &middot; 12.4 MB</p>
+                                  </div>
+                                  <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-md border border-green-200">Healthy</span>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-xl p-5">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-1">Create Backup</h4>
+                                  <p className="text-xs text-gray-500 mb-4">Generate a full backup of your AMS data right now.</p>
+                                  <button onClick={() => alert('Backup created successfully (demo)')} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                                    <Database className="w-4 h-4" />
+                                    Backup Now
+                                  </button>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-xl p-5">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-1">Restore from Backup</h4>
+                                  <p className="text-xs text-gray-500 mb-4">Upload a backup file to restore your data. This will overwrite current data.</p>
+                                  <div className="flex items-center gap-3">
+                                    <input type="file" accept=".sql,.zip,.bak" className="text-sm" />
+                                    <button onClick={() => alert('Restore initiated (demo)')} className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+                                      Restore
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-xl p-5">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-1">Automatic Backups</h4>
+                                  <p className="text-xs text-gray-500 mb-4">Schedule automatic backups every day at 2:30 AM.</p>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-700">Enable daily backups</span>
+                                    <Toggle checked={true} onChange={() => {}} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* SYSTEM INFORMATION */}
+                          {settingsTab === 'System Information' && (
+                            <div className="animate-in fade-in duration-200">
+                              <h3 className="text-xl font-bold text-gray-900 mb-6">System Information</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
+                                {[
+                                  { label: 'App Version', value: 'AMS v2.4.1', icon: Info, color: 'text-blue-600 bg-blue-50' },
+                                  { label: 'Environment', value: 'Production', icon: Server, color: 'text-green-600 bg-green-50' },
+                                  { label: 'Database', value: 'MongoDB 7.0.5', icon: Database, color: 'text-emerald-600 bg-emerald-50' },
+                                  { label: 'Server Uptime', value: '42 days, 7h 18m', icon: Server, color: 'text-purple-600 bg-purple-50' },
+                                  { label: 'Storage Used', value: '4.2 GB / 50 GB', icon: HardDrive, color: 'text-amber-600 bg-amber-50' },
+                                  { label: 'Total Assets', value: '1,250', icon: Boxes, color: 'text-indigo-600 bg-indigo-50' },
+                                  { label: 'Total Users', value: '28', icon: Users, color: 'text-rose-600 bg-rose-50' },
+                                  { label: 'License', value: 'Enterprise (valid till Dec 2026)', icon: Shield, color: 'text-cyan-600 bg-cyan-50' },
+                                ].map((info) => {
+                                  const Icon = info.icon
+                                  return (
+                                    <div key={info.label} className="p-5 rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex items-center gap-4">
+                                      <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${info.color}`}>
+                                        <Icon className="w-5 h-5" />
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">{info.label}</p>
+                                        <p className="text-sm font-bold text-gray-900 mt-0.5">{info.value}</p>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              <button onClick={() => alert('Checking for updates... You are on the latest version.')} className="mt-6 px-5 py-2 rounded-lg text-sm font-semibold text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors">
+                                Check for Updates
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Save Changes button */}
+                          {settingsTab !== 'System Information' && settingsTab !== 'Backup & Restore' && (
+                            <div className="flex justify-end mt-8 pt-5 border-t border-gray-100">
+                              <button onClick={handleSave} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                                <Save className="w-4 h-4" />
+                                Save Changes
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()
+              ) : activeMenu === 'Dashboard' ? (
+                (() => {
+                  const stats = [
+                    { label: 'Total Assets', value: 1245, percentLabel: 'View all assets', sub: 'arrow', icon: Monitor, color: 'text-blue-500', bg: 'bg-blue-100', trend: 5.2, trendUp: true, onClick: () => setActiveMenu('Assets') },
+                    { label: 'Assigned Assets', value: 945, percentLabel: '75.90% of total', sub: 'percent', icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-100', trend: 3.4, trendUp: true, percentColor: 'text-emerald-600' },
+                    { label: 'Available Assets', value: 210, percentLabel: '16.87% of total', sub: 'percent', icon: Package, color: 'text-amber-500', bg: 'bg-amber-100', trend: 1.1, trendUp: false, percentColor: 'text-amber-600' },
+                    { label: 'Under Maintenance', value: 90, percentLabel: '7.23% of total', sub: 'percent', icon: Wrench, color: 'text-red-500', bg: 'bg-red-100', trend: 0.8, trendUp: true, percentColor: 'text-red-600' },
+                  ]
+                  const totalCatVal = 540 + 320 + 150 + 120 + 115
+                  const categoryData = [
+                    { label: 'Laptops', value: 540, color: '#3b82f6' },
+                    { label: 'Desktops', value: 320, color: '#22c55e' },
+                    { label: 'Printers', value: 150, color: '#f59e0b' },
+                    { label: 'Monitors', value: 120, color: '#8b5cf6' },
+                    { label: 'Others', value: 115, color: '#ef4444' },
+                  ]
+                  const statusData = [
+                    { label: 'Assigned', value: 945, color: '#22c55e' },
+                    { label: 'Available', value: 210, color: '#f59e0b' },
+                    { label: 'Maintenance', value: 90, color: '#ef4444' },
+                  ]
+                  const recentActivity = [
+                    { icon: User, bg: 'bg-blue-100', color: 'text-blue-500', text: 'Dell Laptop (A1001) assigned to John Doe', time: '2 minutes ago' },
+                    { icon: Printer, bg: 'bg-emerald-100', color: 'text-emerald-500', text: 'HP Printer (P2002) added to inventory', time: '15 minutes ago' },
+                    { icon: RotateCw, bg: 'bg-cyan-100', color: 'text-cyan-500', text: 'Apple MacBook (A1003) returned by Mary Smith', time: '1 hour ago' },
+                    { icon: Wrench, bg: 'bg-red-100', color: 'text-red-500', text: 'Logitech Mouse (A1004) under maintenance', time: '2 hours ago' },
+                    { icon: FolderKanban, bg: 'bg-amber-100', color: 'text-amber-500', text: "New asset category 'Projectors' added", time: '3 hours ago' },
+                  ]
+                  const recentAssets = [
+                    { id: 'A1001', name: 'Dell Latitude 5440', category: 'Laptop', serial: 'DL5440X123456', status: 'Assigned', assignedTo: 'John Doe' },
+                    { id: 'P2002', name: 'HP LaserJet Pro', category: 'Printer', serial: 'HPLJ123789', status: 'Available', assignedTo: '-' },
+                    { id: 'A1003', name: 'Apple MacBook Air', category: 'Laptop', serial: 'MBA2023X456', status: 'Assigned', assignedTo: 'Mary Smith' },
+                    { id: 'M3001', name: 'Samsung 24" Monitor', category: 'Monitor', serial: 'SM24F450X789', status: 'Maintenance', assignedTo: '-' },
+                    { id: 'A1004', name: 'Logitech Wireless Mouse', category: 'Accessory', serial: 'LOGMOU123456', status: 'Available', assignedTo: '-' },
+                  ]
+                  const monthlyData = [
+                    { month: 'Jan', value: 85 }, { month: 'Feb', value: 110 },
+                    { month: 'Mar', value: 95 }, { month: 'Apr', value: 140 },
+                    { month: 'May', value: 165 }, { month: 'Jun', value: 130 },
+                    { month: 'Jul', value: 175 }, { month: 'Aug', value: 155 },
+                    { month: 'Sep', value: 195 }, { month: 'Oct', value: 180 },
+                    { month: 'Nov', value: 210 }, { month: 'Dec', value: 245 },
+                  ]
+                  const maxMonth = Math.max(...monthlyData.map(m => m.value))
+                  const alerts = [
+                    { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', title: '12 warranties expiring this month', desc: 'Review warranty details to avoid disruption' },
+                    { icon: Wrench, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', title: '5 maintenance tasks overdue', desc: 'Action required to keep assets operational' },
+                    { icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', title: '8 assets pending assignment', desc: 'New hires waiting for equipment allocation' },
+                  ]
+                  const topDepts = [
+                    { name: 'IT Department', count: 425, percent: 34 },
+                    { name: 'Finance', count: 215, percent: 17 },
+                    { name: 'Marketing', count: 180, percent: 14 },
+                    { name: 'HR Department', count: 145, percent: 12 },
+                    { name: 'Sales', count: 130, percent: 10 },
+                  ]
+                  const statusBadgeCls = (s) =>
+                    s === 'Assigned' ? 'bg-green-100 text-green-700 border-green-200'
+                    : s === 'Available' ? 'bg-amber-100 text-amber-700 border-amber-200'
+                    : 'bg-red-100 text-red-700 border-red-200'
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+                          <p className="text-sm text-gray-500 mt-1">Welcome back, Admin User!</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <button
+                            onClick={() => setActiveMenu('Assets')}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add Asset
+                          </button>
+                          <button
+                            onClick={() => { setActiveMenu('QR Code Scanner'); resetScan() }}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                          >
+                            <QrIcon className="w-4 h-4" />
+                            Scan QR Code
+                          </button>
+                          <button
+                            onClick={() => setActiveMenu('Reports')}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Generate Report
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, idx) => {
+                          const Icon = s.icon
+                          const Trend = s.trendUp ? TrendingUp : TrendingDown
+                          return (
+                            <div
+                              key={idx}
+                              onClick={s.onClick}
+                              className={`bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all ${s.onClick ? 'cursor-pointer' : ''}`}
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                  <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                                </div>
+                                <div className={`flex items-center gap-1 text-xs font-semibold ${s.trendUp ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'} px-2 py-1 rounded-md`}>
+                                  <Trend className="w-3 h-3" />
+                                  {s.trend}%
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                              <p className="text-3xl font-bold text-gray-900 mt-1">{s.value.toLocaleString()}</p>
+                              {s.sub === 'arrow' ? (
+                                <button onClick={(e) => { e.stopPropagation(); s.onClick?.() }} className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-3">
+                                  {s.percentLabel}
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <p className={`text-sm font-semibold ${s.percentColor} mt-3`}>{s.percentLabel}</p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Alerts strip */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {alerts.map((a, i) => {
+                          const Icon = a.icon
+                          return (
+                            <div key={i} className={`flex items-start gap-3 p-4 rounded-xl border ${a.bg} ${a.border}`}>
+                              <div className={`w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0 ${a.color}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900">{a.title}</p>
+                                <p className="text-xs text-gray-600 mt-0.5">{a.desc}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Middle row: Category / Activity / Status */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-4">Assets by Category</h3>
+                          <div className="flex items-center gap-4">
+                            <DonutChart data={categoryData} size={180} strokeWidth={34} />
+                            <div className="flex-1 space-y-2.5">
+                              {categoryData.map((d, i) => (
+                                <div key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: d.color }} />
+                                  <div className="leading-tight">
+                                    <div className="font-semibold text-gray-800">{d.label}</div>
+                                    <div className="text-xs text-gray-500">{d.value} ({((d.value / totalCatVal) * 100).toFixed(2)}%)</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
+                          <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+                          <div className="flex-1 space-y-4">
+                            {recentActivity.map((a, i) => {
+                              const Icon = a.icon
+                              return (
+                                <div key={i} className="flex gap-3">
+                                  <div className={`w-9 h-9 rounded-full ${a.bg} flex items-center justify-center flex-shrink-0`}>
+                                    <Icon className={`w-4 h-4 ${a.color}`} />
+                                  </div>
+                                  <div className="flex-1 leading-tight">
+                                    <p className="text-sm text-gray-800">{a.text}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">{a.time}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <button onClick={() => setActiveMenu('Notifications')} className="flex items-center justify-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-4">
+                            View all activity
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-4">Assets by Status</h3>
+                          <div className="flex items-center gap-4">
+                            <DonutChart data={statusData} size={180} strokeWidth={34} />
+                            <div className="flex-1 space-y-3">
+                              {statusData.map((d, i) => (
+                                <div key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: d.color }} />
+                                  <div className="leading-tight">
+                                    <div className="font-semibold text-gray-800">{d.label}</div>
+                                    <div className="text-xs text-gray-500">{d.value} ({((d.value / 1245) * 100).toFixed(2)}%)</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Monthly trend + top departments */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6">
+                          <div className="flex items-center justify-between mb-5">
+                            <div>
+                              <h3 className="text-lg font-bold text-gray-900">Asset Additions — Last 12 Months</h3>
+                              <p className="text-xs text-gray-500 mt-0.5">Total acquisitions over time</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              +18.2% YoY
+                            </div>
+                          </div>
+                          <div className="flex items-end justify-between gap-2 h-48">
+                            {monthlyData.map((m, i) => {
+                              const h = (m.value / maxMonth) * 100
+                              return (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                                  <div className="relative w-full flex items-end h-full">
+                                    <div
+                                      className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-md transition-all duration-500 hover:from-blue-700 hover:to-blue-500 cursor-pointer"
+                                      style={{ height: `${h}%`, minHeight: '8px' }}
+                                      title={`${m.month}: ${m.value} assets`}
+                                    />
+                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity bg-white px-1.5 py-0.5 rounded shadow-sm border border-gray-200 whitespace-nowrap">
+                                      {m.value}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] font-medium text-gray-500">{m.month}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-5">Top Departments</h3>
+                          <div className="space-y-4">
+                            {topDepts.map((d, i) => (
+                              <div key={i}>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-semibold text-gray-800">{d.name}</span>
+                                  </div>
+                                  <span className="text-sm font-bold text-gray-900">{d.count}</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700"
+                                    style={{ width: `${d.percent * 2.5}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recent Assets table */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                          <h3 className="text-lg font-bold text-gray-900">Recent Assets</h3>
+                          <button onClick={() => setActiveMenu('Assets')} className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            View all assets
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200">
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset ID</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset Name</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Serial Number</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned To</th>
+                                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {recentAssets.map((a) => (
+                                <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{a.id}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-800">{a.name}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{a.category}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{a.serial}</td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border ${statusBadgeCls(a.status)}`}>
+                                      {a.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{a.assignedTo}</td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button onClick={() => alert(`Edit ${a.id}`)} title="Edit" className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <Pencil className="w-4 h-4" />
+                                      </button>
+                                      <button onClick={() => { setActiveMenu('QR Code Scanner'); resetScan() }} title="View QR" className="w-8 h-8 rounded-md bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <QrIcon className="w-4 h-4" />
+                                      </button>
+                                      <button onClick={() => { if (confirm(`Delete ${a.id}?`)) alert('Deleted (demo)') }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()
               ) : (
-                /* Placeholder for other menu items */
                 <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-center">
                   <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4">
                     <LayoutDashboard className="w-10 h-10 text-blue-600" />
