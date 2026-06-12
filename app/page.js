@@ -50,12 +50,16 @@ import {
 } from 'lucide-react'
 
 const dummyAssets = [
-  { id: 'A1001', name: 'Dell Latitude 5440', category: 'Laptop', manufacturer: 'Dell Latitude 5440', serial: 'DLS44OY133456', model: 'Latitude 5440', purchaseDate: '2024-02-15', purchasePrice: 75000, vendor: 'Dell India Pvt. Ltd.', warranty: '2026-02-15', location: 'IT Department', description: 'Dell Latitude 5440 Laptop', status: 'Assigned', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
-  { id: 'A1002', name: 'HP LaserJet Pro', category: 'Printer', manufacturer: 'HP LaserJet Pro M404', serial: 'HPLJ778899', model: 'M404dn', purchaseDate: '2023-11-05', purchasePrice: 22000, vendor: 'HP India', warranty: '2025-11-05', location: 'Reception', description: 'Office monochrome laser printer', status: 'Available', image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&q=80' },
-  { id: 'A1003', name: 'Apple MacBook Pro', category: 'Laptop', manufacturer: 'Apple MacBook Pro 14"', serial: 'APMBP223344', model: 'M2 Pro 14"', purchaseDate: '2024-01-20', purchasePrice: 215000, vendor: 'Apple India', warranty: '2026-01-20', location: 'Design Team', description: 'MacBook Pro for designers', status: 'Assigned', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=80' },
-  { id: 'A1004', name: 'Samsung 24" Monitor', category: 'Monitor', manufacturer: 'Samsung S24R350', serial: 'SMS24R998877', model: 'S24R350', purchaseDate: '2023-08-12', purchasePrice: 14500, vendor: 'Samsung India', warranty: '2025-08-12', location: 'IT Department', description: '24-inch Full HD IPS monitor', status: 'Maintenance', image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&q=80' },
-  { id: 'A1005', name: 'Lenovo ThinkPad E14', category: 'Laptop', manufacturer: 'Lenovo ThinkPad E14', serial: 'LNTP445566', model: 'E14 Gen 4', purchaseDate: '2024-03-10', purchasePrice: 68000, vendor: 'Lenovo India', warranty: '2026-03-10', location: 'Finance', description: 'Business laptop for finance team', status: 'Assigned', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
-  { id: 'A1006', name: 'Epson Projector', category: 'Projector', manufacturer: 'Epson EB-X51', serial: 'EPPRJ112233', model: 'EB-X51', purchaseDate: '2023-06-18', purchasePrice: 42000, vendor: 'Epson India', warranty: '2025-06-18', location: 'Conference Room', description: 'XGA conference room projector', status: 'Available', image: 'https://images.unsplash.com/photo-1626218174358-7769486beb39?w=600&q=80' },
+  { id: 'A1001', name: 'Dell Latitude 5440', category: 'Laptop', manufacturer: 'Dell Latitude 5440', serial: 'DLS44OY133456', model: 'Latitude 5440', purchaseDate: '2024-02-15', purchasePrice: 75000, vendor: 'Dell India Pvt. Ltd.', warranty: '2026-02-15', location: 'IT Department', description: 'Dell Latitude 5440 Laptop', status: 'Assigned', assignedTo: 'John Doe', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
+  { id: 'A1002', name: 'HP LaserJet Pro', category: 'Printer', manufacturer: 'HP LaserJet Pro M404', serial: 'HPLJ778899', model: 'M404dn', purchaseDate: '2023-11-05', purchasePrice: 22000, vendor: 'HP India', warranty: '2025-11-05', location: 'Reception', description: 'Office monochrome laser printer', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&q=80' },
+  { id: 'A1003', name: 'Apple MacBook Pro', category: 'Laptop', manufacturer: 'Apple MacBook Pro 14"', serial: 'APMBP223344', model: 'M2 Pro 14"', purchaseDate: '2024-01-20', purchasePrice: 215000, vendor: 'Apple India', warranty: '2026-01-20', location: 'Design Team', description: 'MacBook Pro for designers', status: 'Assigned', assignedTo: 'Sarah Wilson', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=80' },
+  { id: 'A1004', name: 'Samsung 24" Monitor', category: 'Monitor', manufacturer: 'Samsung S24R350', serial: 'SMS24R998877', model: 'S24R350', purchaseDate: '2023-08-12', purchasePrice: 14500, vendor: 'Samsung India', warranty: '2025-08-12', location: 'IT Department', description: '24-inch Full HD IPS monitor', status: 'Maintenance', assignedTo: 'Mike Johnson', image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&q=80' },
+  { id: 'A1005', name: 'Lenovo ThinkPad E14', category: 'Laptop', manufacturer: 'Lenovo ThinkPad E14', serial: 'LNTP445566', model: 'E14 Gen 4', purchaseDate: '2024-03-10', purchasePrice: 68000, vendor: 'Lenovo India', warranty: '2026-03-10', location: 'Finance', description: 'Business laptop for finance team', status: 'Assigned', assignedTo: 'Robert Brown', image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&q=80' },
+  { id: 'A1006', name: 'Epson Projector', category: 'Projector', manufacturer: 'Epson EB-X51', serial: 'EPPRJ112233', model: 'EB-X51', purchaseDate: '2023-06-18', purchasePrice: 42000, vendor: 'Epson India', warranty: '2025-06-18', location: 'Conference Room', description: 'XGA conference room projector', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1626218174358-7769486beb39?w=600&q=80' },
+  { id: 'A1007', name: 'iPhone 15 Pro', category: 'Mobile Device', manufacturer: 'Apple iPhone 15 Pro', serial: 'APIP15P55667', model: 'iPhone 15 Pro', purchaseDate: '2024-04-02', purchasePrice: 134900, vendor: 'Apple India', warranty: '2026-04-02', location: 'Sales Team', description: 'Company phone for sales executive', status: 'Assigned', assignedTo: 'James Taylor', image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&q=80' },
+  { id: 'A1008', name: 'Logitech MX Master 3S', category: 'Peripheral', manufacturer: 'Logitech MX Master 3S', serial: 'LGMX3S889900', model: 'MX Master 3S', purchaseDate: '2024-05-08', purchasePrice: 8500, vendor: 'Logitech India', warranty: '2026-05-08', location: 'IT Department', description: 'Wireless ergonomic mouse', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&q=80' },
+  { id: 'A1009', name: 'iPad Pro 12.9"', category: 'Tablet', manufacturer: 'Apple iPad Pro', serial: 'APIPD129776', model: 'iPad Pro M2', purchaseDate: '2024-02-28', purchasePrice: 109900, vendor: 'Apple India', warranty: '2026-02-28', location: 'Marketing', description: 'iPad for content creation team', status: 'Assigned', assignedTo: 'Sophia Garcia', image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=600&q=80' },
+  { id: 'A1010', name: 'Canon EOS R6 Camera', category: 'Camera', manufacturer: 'Canon EOS R6', serial: 'CNEOSR6334455', model: 'EOS R6 Mark II', purchaseDate: '2023-12-15', purchasePrice: 245000, vendor: 'Canon India', warranty: '2025-12-15', location: 'Media Room', description: 'Mirrorless camera for marketing shoots', status: 'Maintenance', assignedTo: 'Daniel Martinez', image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=600&q=80' },
 ]
 
 const assignmentHistory = {
@@ -203,11 +207,14 @@ function App() {
 
   // QR Scanner state: 'idle' | 'scanning' | 'scanned'
   const [qrState, setQrState] = useState('idle')
+  const [scannedAssetIdx, setScannedAssetIdx] = useState(0)
   const qrTimerRef = useRef(null)
 
   const startScan = () => {
     setQrState('scanning')
     qrTimerRef.current = setTimeout(() => {
+      // Pick a random asset from the 10 dummy assets
+      setScannedAssetIdx(Math.floor(Math.random() * dummyAssets.length))
       setQrState('scanned')
     }, 2800)
   }
@@ -1358,7 +1365,13 @@ function App() {
                 ) : (
                   /* Scanned Result */
                   (() => {
-                    const scanned = dummyAssets[0] // A1001 Dell Latitude
+                    const scanned = dummyAssets[scannedAssetIdx]
+                    const statusStyle =
+                      scanned.status === 'Assigned'
+                        ? 'bg-green-100 text-green-700 border-green-200'
+                        : scanned.status === 'Available'
+                        ? 'bg-amber-100 text-amber-700 border-amber-200'
+                        : 'bg-red-100 text-red-700 border-red-200'
                     return (
                       <div className="animate-in fade-in duration-500">
                         {/* Success Header */}
@@ -1391,14 +1404,14 @@ function App() {
                             <div className="grid grid-cols-2 gap-2 items-center">
                               <span className="text-sm text-gray-500">Status</span>
                               <span>
-                                <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                                <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold border ${statusStyle}`}>
                                   {scanned.status}
                                 </span>
                               </span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <span className="text-sm text-gray-500">Assigned To</span>
-                              <span className="text-sm font-semibold text-gray-900">John Doe</span>
+                              <span className="text-sm font-semibold text-gray-900">{scanned.assignedTo}</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <span className="text-sm text-gray-500">Location</span>
