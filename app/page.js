@@ -66,6 +66,24 @@ import {
   Mouse,
 } from 'lucide-react'
 
+const initialNotifications = [
+  { id: 'N001', type: 'assignment', title: 'New Asset Assignment', desc: 'Dell Latitude 5440 (A1001) assigned to John Doe', time: '2 minutes ago', timestamp: Date.now() - 2*60*1000, read: false, target: 'Asset Assignment' },
+  { id: 'N002', type: 'maintenance', title: 'Maintenance Due', desc: 'Samsung 24" Monitor (A1004) is due for scheduled maintenance tomorrow', time: '15 minutes ago', timestamp: Date.now() - 15*60*1000, read: false, target: 'Maintenance' },
+  { id: 'N003', type: 'warranty', title: 'Warranty Expiring Soon', desc: '12 assets have warranties expiring this month — review now', time: '1 hour ago', timestamp: Date.now() - 60*60*1000, read: false, target: 'Reports' },
+  { id: 'N004', type: 'return', title: 'Asset Returned', desc: 'Apple MacBook Pro (A1003) returned by Sarah Wilson in Good condition', time: '2 hours ago', timestamp: Date.now() - 2*60*60*1000, read: false, target: 'Return Assets' },
+  { id: 'N005', type: 'system', title: 'System Backup Successful', desc: 'Daily backup completed (12.4 MB) at 02:30 AM', time: '5 hours ago', timestamp: Date.now() - 5*60*60*1000, read: true, target: 'Settings' },
+  { id: 'N006', type: 'overdue', title: 'Overdue Return Alert', desc: 'HP Pavilion 24 (A1013) was due for return on 01-06-2024 — Mia King', time: '8 hours ago', timestamp: Date.now() - 8*60*60*1000, read: false, target: 'Return Assets' },
+  { id: 'N007', type: 'inventory', title: 'New Asset Added', desc: 'HP ProBook 450 G10 (A1020) added to inventory', time: 'Yesterday', timestamp: Date.now() - 26*60*60*1000, read: true, target: 'Assets' },
+  { id: 'N008', type: 'assignment', title: 'Asset Assignment Updated', desc: 'iPhone 15 Pro (A1007) reassigned from Sales Team to James Taylor', time: 'Yesterday', timestamp: Date.now() - 30*60*60*1000, read: true, target: 'Asset Assignment' },
+  { id: 'N009', type: 'vendor', title: 'New Vendor Onboarded', desc: 'TechServ IT Services added to the vendor list', time: '2 days ago', timestamp: Date.now() - 2*24*60*60*1000, read: true, target: 'Vendors' },
+  { id: 'N010', type: 'maintenance', title: 'Maintenance Completed', desc: 'Canon EOS R6 Camera (A1010) maintenance completed successfully', time: '3 days ago', timestamp: Date.now() - 3*24*60*60*1000, read: true, target: 'Maintenance' },
+  { id: 'N011', type: 'warranty', title: 'Warranty Renewed', desc: 'Dell Latitude 5440 warranty extended until 15-02-2027', time: '3 days ago', timestamp: Date.now() - 3*24*60*60*1000, read: true, target: 'Assets' },
+  { id: 'N012', type: 'system', title: 'Settings Updated', desc: 'Notification preferences updated by Admin User', time: '4 days ago', timestamp: Date.now() - 4*24*60*60*1000, read: true, target: 'Settings' },
+  { id: 'N013', type: 'overdue', title: 'Overdue Return', desc: 'HP ProBook (A1020) was due 08-06-2024 — Benjamin Hall', time: '5 days ago', timestamp: Date.now() - 5*24*60*60*1000, read: false, target: 'Return Assets' },
+  { id: 'N014', type: 'inventory', title: 'Low Stock Alert', desc: 'Available laptop inventory dropped below 5 units', time: '6 days ago', timestamp: Date.now() - 6*24*60*60*1000, read: true, target: 'Categories' },
+  { id: 'N015', type: 'system', title: 'License Expiring', desc: 'Enterprise license valid till December 2026 — renew soon', time: '1 week ago', timestamp: Date.now() - 7*24*60*60*1000, read: true, target: 'Settings' },
+]
+
 const dummyVendors = [
   { id: 'V001', name: 'Dell India Pvt. Ltd.', contact: 'Rahul Sharma', email: 'rahul.sharma@dell.com', phone: '+91 98765 11234', city: 'Bangalore', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 4, totalSpend: 568000, rating: 5, since: 2019 },
   { id: 'V002', name: 'HP India', contact: 'Priya Mehta', email: 'priya@hp.com', phone: '+91 98765 22345', city: 'Mumbai', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 4, totalSpend: 224500, rating: 4.5, since: 2018 },
@@ -331,6 +349,18 @@ function App() {
   const [vendorView, setVendorView] = useState('grid')
   const [selectedVendor, setSelectedVendor] = useState(null)
 
+  // Notifications state
+  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const [notifFilter, setNotifFilter] = useState('All')
+  const notifDropdownRef = useRef(null)
+
+  const unreadCount = notifications.filter(n => !n.read).length
+  const markNotifRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  const markAllNotifRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  const clearAllNotifs = () => setNotifications([])
+  const deleteNotif = (id) => setNotifications(prev => prev.filter(n => n.id !== id))
+
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
   const [selectedAssetId, setSelectedAssetId] = useState(null)
@@ -409,6 +439,9 @@ function App() {
     const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false)
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
+        setNotifDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -569,12 +602,96 @@ function App() {
               </div>
 
               <div className="flex items-center gap-5">
-                <button className="relative p-1.5 hover:bg-gray-100 rounded-full transition-colors">
-                  <Bell className="w-5 h-5 text-gray-700" />
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    3
-                  </span>
-                </button>
+                {/* Notifications Bell */}
+                <div className="relative" ref={notifDropdownRef}>
+                  <button
+                    onClick={() => setNotifDropdownOpen((v) => !v)}
+                    className="relative p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <Bell className="w-5 h-5 text-gray-700" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900">Notifications</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">{unreadCount} unread</p>
+                        </div>
+                        {unreadCount > 0 && (
+                          <button onClick={markAllNotifRead} className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      {/* List */}
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="py-12 text-center">
+                            <Bell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-sm font-semibold text-gray-600">All caught up!</p>
+                            <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
+                          </div>
+                        ) : (
+                          notifications.slice(0, 6).map((n) => {
+                            const meta = ({
+                              assignment: { icon: UserPlus, color: 'text-blue-600', bg: 'bg-blue-100' },
+                              maintenance: { icon: Wrench, color: 'text-red-600', bg: 'bg-red-100' },
+                              warranty: { icon: Shield, color: 'text-purple-600', bg: 'bg-purple-100' },
+                              return: { icon: RotateCw, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+                              system: { icon: Settings, color: 'text-gray-600', bg: 'bg-gray-100' },
+                              overdue: { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100' },
+                              inventory: { icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                              vendor: { icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+                            }[n.type]) || { icon: Bell, color: 'text-gray-600', bg: 'bg-gray-100' }
+                            const Icon = meta.icon
+                            return (
+                              <button
+                                key={n.id}
+                                onClick={() => {
+                                  markNotifRead(n.id)
+                                  setNotifDropdownOpen(false)
+                                  if (n.target) setActiveMenu(n.target)
+                                }}
+                                className={`w-full text-left flex items-start gap-3 px-5 py-3 border-b border-gray-50 hover:bg-blue-50/50 transition-colors ${!n.read ? 'bg-blue-50/30' : ''}`}
+                              >
+                                <div className={`w-9 h-9 rounded-full ${meta.bg} flex items-center justify-center flex-shrink-0`}>
+                                  <Icon className={`w-4 h-4 ${meta.color}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className={`text-sm ${!n.read ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'} truncate`}>{n.title}</p>
+                                    {!n.read && <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{n.desc}</p>
+                                  <p className="text-[11px] text-gray-400 mt-1">{n.time}</p>
+                                </div>
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
+                        <button
+                          onClick={() => { setActiveMenu('Notifications'); setNotifDropdownOpen(false) }}
+                          className="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1"
+                        >
+                          View all notifications
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Profile dropdown */}
                 <div className="relative" ref={profileRef}>
@@ -2507,6 +2624,144 @@ function App() {
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Notifications' ? (
+                (() => {
+                  const filters = ['All', 'Unread', 'Read', 'Assignment', 'Maintenance', 'Warranty', 'System']
+                  const filterMap = { Assignment: 'assignment', Maintenance: 'maintenance', Warranty: 'warranty', System: 'system' }
+                  const filtered = notifications.filter(n => {
+                    if (notifFilter === 'All') return true
+                    if (notifFilter === 'Unread') return !n.read
+                    if (notifFilter === 'Read') return n.read
+                    return n.type === filterMap[notifFilter]
+                  })
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Notifications</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Notifications
+                            {unreadCount > 0 && <span className="ml-2 inline-flex px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">{unreadCount} unread</span>}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button onClick={markAllNotifRead} disabled={unreadCount === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <Check className="w-4 h-4" />
+                            Mark all as read
+                          </button>
+                          <button onClick={() => { if (confirm('Clear all notifications?')) clearAllNotifs() }} disabled={notifications.length === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                            Clear all
+                          </button>
+                          <button onClick={() => setActiveMenu('Settings')} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                            <Settings className="w-4 h-4" />
+                            Preferences
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        {[
+                          { label: 'Total', value: notifications.length, icon: Bell, color: 'text-blue-500', bg: 'bg-blue-100' },
+                          { label: 'Unread', value: unreadCount, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-100' },
+                          { label: 'Read', value: notifications.length - unreadCount, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                          { label: 'Action Required', value: notifications.filter(n => n.type === 'overdue' || (n.type === 'warranty' && !n.read)).length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-100' },
+                        ].map((s, i) => {
+                          const Icon = s.icon
+                          return (
+                            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-0.5">{s.value}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Filter pills */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {filters.map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setNotifFilter(f)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                              notifFilter === f
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* List */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        {filtered.length === 0 ? (
+                          <div className="py-20 text-center">
+                            <Bell className="w-14 h-14 text-gray-300 mx-auto mb-3" />
+                            <p className="text-base font-semibold text-gray-700">No notifications</p>
+                            <p className="text-sm text-gray-500 mt-1">You&apos;re all caught up!</p>
+                          </div>
+                        ) : (
+                          <ul className="divide-y divide-gray-100">
+                            {filtered.map((n) => {
+                              const meta = ({
+                                assignment: { icon: UserPlus, color: 'text-blue-600', bg: 'bg-blue-100', accent: 'border-l-blue-500' },
+                                maintenance: { icon: Wrench, color: 'text-red-600', bg: 'bg-red-100', accent: 'border-l-red-500' },
+                                warranty: { icon: Shield, color: 'text-purple-600', bg: 'bg-purple-100', accent: 'border-l-purple-500' },
+                                return: { icon: RotateCw, color: 'text-cyan-600', bg: 'bg-cyan-100', accent: 'border-l-cyan-500' },
+                                system: { icon: Settings, color: 'text-gray-600', bg: 'bg-gray-100', accent: 'border-l-gray-400' },
+                                overdue: { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100', accent: 'border-l-amber-500' },
+                                inventory: { icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-100', accent: 'border-l-emerald-500' },
+                                vendor: { icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-100', accent: 'border-l-indigo-500' },
+                              }[n.type]) || { icon: Bell, color: 'text-gray-600', bg: 'bg-gray-100', accent: 'border-l-gray-400' }
+                              const Icon = meta.icon
+                              return (
+                                <li key={n.id} className={`group flex items-start gap-4 px-6 py-4 border-l-4 ${meta.accent} hover:bg-gray-50 transition-colors ${!n.read ? 'bg-blue-50/30' : ''}`}>
+                                  <div className={`w-11 h-11 rounded-full ${meta.bg} flex items-center justify-center flex-shrink-0`}>
+                                    <Icon className={`w-5 h-5 ${meta.color}`} />
+                                  </div>
+                                  <button
+                                    onClick={() => { markNotifRead(n.id); if (n.target) setActiveMenu(n.target) }}
+                                    className="flex-1 min-w-0 text-left"
+                                  >
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className={`text-sm ${!n.read ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>{n.title}</h4>
+                                      {!n.read && <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">NEW</span>}
+                                      <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 capitalize">· {n.type}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-1">{n.desc}</p>
+                                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {n.time}
+                                    </p>
+                                  </button>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {!n.read && (
+                                      <button onClick={() => markNotifRead(n.id)} title="Mark as read" className="w-8 h-8 rounded-md text-gray-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors">
+                                        <Check className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                    <button onClick={() => deleteNotif(n.id)} title="Delete" className="w-8 h-8 rounded-md text-gray-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
                       </div>
                     </div>
                   )
