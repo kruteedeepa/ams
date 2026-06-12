@@ -66,6 +66,47 @@ import {
   Mouse,
 } from 'lucide-react'
 
+const generateAssetHistory = (asset) => {
+  const pastUsers = ['Mike Johnson', 'Sarah Wilson', 'David Lee', 'Emily Davis', 'James Taylor', 'Sophia Garcia', 'Daniel Martinez', 'William Thomas', 'Isabella Allen', 'Henry Wright']
+  const idx = parseInt(asset.id.slice(1)) % pastUsers.length
+  const u1 = pastUsers[idx]
+  const u2 = pastUsers[(idx + 3) % pastUsers.length]
+
+  const assignments = []
+  if (asset.assignedTo && asset.assignedTo !== '-') {
+    const day = String((parseInt(asset.id.slice(1)) % 26) + 1).padStart(2, '0')
+    assignments.push({ name: asset.assignedTo, assignedDate: `${day}-02-2024`, returnedDate: null, status: 'Current' })
+  }
+  assignments.push({ name: u1, assignedDate: '10-01-2024', returnedDate: '15-02-2024', status: 'Returned' })
+  if (idx % 2 === 0) {
+    assignments.push({ name: u2, assignedDate: '05-06-2023', returnedDate: '08-01-2024', status: 'Returned' })
+  }
+
+  const maintenance = []
+  if (asset.status === 'Maintenance') {
+    maintenance.push({ id: `M2${asset.id.slice(1)}`, type: 'Hardware Inspection', date: '15-05-2024', status: 'In Progress', technician: 'TechSupport Team' })
+  }
+  maintenance.push({ id: `M1${asset.id.slice(1)}`, type: 'Routine Check', date: '22-03-2024', status: 'Completed', technician: 'IT Helpdesk' })
+  if (idx % 3 === 0) {
+    maintenance.push({ id: `M0${asset.id.slice(1)}`, type: 'Software Update', date: '10-01-2024', status: 'Completed', technician: 'IT Helpdesk' })
+  }
+
+  const activity = [
+    { text: `Asset ${asset.id} created in inventory`, time: `15-02-2024 11:00 AM`, type: 'create' },
+    { text: `Purchased from ${asset.vendor}`, time: `15-02-2024 11:05 AM`, type: 'purchase' },
+  ]
+  if (asset.assignedTo && asset.assignedTo !== '-') {
+    activity.push({ text: `Assigned to ${asset.assignedTo}`, time: `16-02-2024 10:30 AM`, type: 'assign' })
+  }
+  activity.push({ text: `Returned by ${u1}`, time: `15-02-2024 04:12 PM`, type: 'return' })
+  if (asset.status === 'Maintenance') {
+    activity.push({ text: `Sent for hardware inspection`, time: `15-05-2024 09:00 AM`, type: 'maintenance' })
+  }
+  activity.push({ text: `Warranty registered with ${asset.vendor}`, time: `20-02-2024 02:45 PM`, type: 'warranty' })
+
+  return { assignments, maintenance, activity }
+}
+
 const dummyAssets = [
   { id: 'A1001', name: 'Dell Latitude 5440', category: 'Laptop', manufacturer: 'Dell Latitude 5440', serial: 'DLS44OY133456', model: 'Latitude 5440', purchaseDate: '2024-02-15', purchasePrice: 75000, vendor: 'Dell India Pvt. Ltd.', warranty: '2026-02-15', location: 'IT Department', description: 'Dell Latitude 5440 Laptop', status: 'Assigned', assignedTo: 'John Doe', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80' },
   { id: 'A1002', name: 'HP LaserJet Pro', category: 'Printer', manufacturer: 'HP LaserJet Pro M404', serial: 'HPLJ778899', model: 'M404dn', purchaseDate: '2023-11-05', purchasePrice: 22000, vendor: 'HP India', warranty: '2025-11-05', location: 'Reception', description: 'Office monochrome laser printer', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&q=80' },
@@ -555,7 +596,233 @@ function App() {
 
             {/* Page Content */}
             <div className="flex-1 px-8 py-6">
-              {activeMenu === 'Assets' ? (
+              {selectedAssetId ? (
+                (() => {
+                  const asset = dummyAssets.find((a) => a.id === selectedAssetId) || dummyAssets[0]
+                  const { assignments, maintenance, activity } = generateAssetHistory(asset)
+                  const formatDate = (d) => {
+                    if (!d) return '-'
+                    if (d.includes('-') && d.split('-')[0].length === 4) {
+                      const [y, m, dd] = d.split('-')
+                      return `${dd}-${m}-${y}`
+                    }
+                    return d
+                  }
+                  const statusBadge =
+                    asset.status === 'Assigned' ? 'bg-green-100 text-green-700 border-green-200'
+                    : asset.status === 'Available' ? 'bg-amber-100 text-amber-700 border-amber-200'
+                    : 'bg-red-100 text-red-700 border-red-200'
+                  const rowStatusCls = (s) =>
+                    s === 'Current' ? 'bg-green-100 text-green-700 border-green-200'
+                    : s === 'Returned' ? 'bg-gray-100 text-gray-700 border-gray-200'
+                    : s === 'In Progress' ? 'bg-orange-100 text-orange-700 border-orange-200'
+                    : 'bg-blue-100 text-blue-700 border-blue-200'
+
+                  const activityIconMap = {
+                    create: { icon: Plus, color: 'text-blue-600', bg: 'bg-blue-100' },
+                    purchase: { icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                    assign: { icon: UserPlus, color: 'text-green-600', bg: 'bg-green-100' },
+                    return: { icon: RotateCw, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+                    maintenance: { icon: Wrench, color: 'text-red-600', bg: 'bg-red-100' },
+                    warranty: { icon: Shield, color: 'text-purple-600', bg: 'bg-purple-100' },
+                  }
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Asset Details</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span>{' '}
+                            <button onClick={() => setSelectedAssetId(null)} className="hover:text-blue-600 underline-offset-2 hover:underline">Assets</button>{' '}
+                            <span className="mx-1">/</span> {asset.id}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button onClick={() => setSelectedAssetId(null)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+                            <ArrowLeft className="w-4 h-4" />
+                            Back
+                          </button>
+                          <button onClick={() => alert(`Edit ${asset.id}`)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                            <Edit3 className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors">
+                            <PrintIcon className="w-4 h-4" />
+                            Print
+                          </button>
+                          <button onClick={() => alert(`QR Code generated for ${asset.id}`)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
+                            <QrIcon className="w-4 h-4" />
+                            Generate QR
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Asset Info Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Image */}
+                        <div className="lg:col-span-4 flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden p-6 min-h-[320px]">
+                          <img src={asset.image} alt={asset.name} className="max-h-[320px] w-full object-contain" />
+                        </div>
+
+                        {/* Details */}
+                        <div className="lg:col-span-8">
+                          {/* Top row: Asset ID + Status */}
+                          <div className="grid grid-cols-2 gap-6 pb-5 border-b border-gray-100">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Asset ID</p>
+                              <p className="text-xl font-bold text-blue-600 mt-1">{asset.id}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</p>
+                              <span className={`inline-flex px-3 py-1 mt-1 rounded-md text-xs font-bold border ${statusBadge}`}>
+                                {asset.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Detail rows */}
+                          <div className="divide-y divide-gray-100">
+                            {[
+                              [['Asset Name', asset.name], ['Category', asset.category]],
+                              [['Manufacturer', asset.manufacturer], ['Model Number', asset.model]],
+                              [['Serial No.', asset.serial], ['Purchase Date', formatDate(asset.purchaseDate)]],
+                              [['Purchase Price', `₹ ${asset.purchasePrice.toLocaleString('en-IN')}.00`], ['Warranty Expiry', formatDate(asset.warranty)]],
+                              [['Vendor', asset.vendor], ['Location', asset.location]],
+                              [['Assigned To', asset.assignedTo || '-'], ['Description', asset.description]],
+                            ].map((pair, i) => (
+                              <div key={i} className="grid grid-cols-2 gap-6 py-3.5">
+                                {pair.map(([k, v]) => (
+                                  <div key={k} className="grid grid-cols-2 gap-3 items-center">
+                                    <span className="text-sm text-gray-500">{k}</span>
+                                    <span className="text-sm font-semibold text-gray-900 break-words">{v}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tabs Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="border-b border-gray-200 px-6 flex items-center gap-2 overflow-x-auto">
+                          {['Assignment History', 'Maintenance History', 'Activity Log'].map((tab) => {
+                            const active = detailsTab === tab
+                            return (
+                              <button
+                                key={tab}
+                                onClick={() => setDetailsTab(tab)}
+                                className={`relative px-4 py-4 text-sm font-semibold transition-colors whitespace-nowrap ${
+                                  active ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                              >
+                                {tab}
+                                {active && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-blue-600 rounded-t" />}
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        {/* ASSIGNMENT HISTORY */}
+                        {detailsTab === 'Assignment History' && (
+                          <div className="animate-in fade-in duration-200 overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned To</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned Date</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Returned Date</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {assignments.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">No assignment history yet</td>
+                                  </tr>
+                                ) : (
+                                  assignments.map((row, i) => (
+                                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-6 py-4 text-sm font-semibold text-gray-800">{row.name}</td>
+                                      <td className="px-6 py-4 text-sm text-gray-700">{row.assignedDate}</td>
+                                      <td className="px-6 py-4 text-sm text-gray-700">{row.returnedDate || '-'}</td>
+                                      <td className="px-6 py-4">
+                                        <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${rowStatusCls(row.status)}`}>
+                                          {row.status}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* MAINTENANCE HISTORY */}
+                        {detailsTab === 'Maintenance History' && (
+                          <div className="animate-in fade-in duration-200 overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Maintenance ID</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Service Date</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Technician</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {maintenance.map((row, i) => (
+                                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-semibold text-blue-600">{row.id}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-800">{row.type}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{row.date}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{row.technician}</td>
+                                    <td className="px-6 py-4">
+                                      <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${row.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-orange-100 text-orange-700 border-orange-200'}`}>
+                                        {row.status}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* ACTIVITY LOG */}
+                        {detailsTab === 'Activity Log' && (
+                          <div className="animate-in fade-in duration-200 p-6">
+                            <div className="relative pl-4">
+                              <span className="absolute left-[15px] top-1 bottom-1 w-0.5 bg-gray-200" />
+                              <ul className="space-y-5">
+                                {activity.map((act, i) => {
+                                  const meta = activityIconMap[act.type] || activityIconMap.create
+                                  const Icon = meta.icon
+                                  return (
+                                    <li key={i} className="relative flex gap-4">
+                                      <div className={`relative z-10 w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center flex-shrink-0`}>
+                                        <Icon className={`w-4 h-4 ${meta.color}`} />
+                                      </div>
+                                      <div className="flex-1 leading-tight pt-1">
+                                        <p className="text-sm text-gray-800">{act.text}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{act.time}</p>
+                                      </div>
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Assets' ? (
                 <>
                   <div className="mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Add New Asset</h2>
@@ -2316,7 +2583,7 @@ function App() {
                                 <div
                                   key={a.id}
                                   className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group bg-white"
-                                  onClick={() => alert(`Asset details for ${a.id} - ${a.name}`)}
+                                  onClick={() => { setSelectedAssetId(a.id); setDetailsTab('Assignment History') }}
                                 >
                                   <div className="aspect-[4/3] bg-gray-50 flex items-center justify-center overflow-hidden">
                                     <img
