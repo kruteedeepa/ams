@@ -613,7 +613,7 @@ function App() {
   const handleLogout = () => {
     setProfileOpen(false)
     setLoggedIn(false)
-    setActiveMenu('Assets')
+    setActiveMenu('Dashboard')
     setAuthMode('signin')
     setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
     setAuthError('')
@@ -625,6 +625,7 @@ function App() {
     setTimeout(() => {
       setCurrentUser({ name: 'Admin User', email: 'admin@ams.com', role: 'Administrator' })
       setLoggedIn(true)
+      setActiveMenu('Dashboard')
       setAuthLoading(false)
       setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
     }, 700)
@@ -656,6 +657,7 @@ function App() {
         }
         setCurrentUser({ name: user.name, email: user.email, role: user.role })
         setLoggedIn(true)
+        setActiveMenu('Dashboard')
         setAuthLoading(false)
         setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
       }, 800)
@@ -695,6 +697,7 @@ function App() {
         setRegisteredUsers(prev => [...prev, newAccount])
         setCurrentUser({ name, email, role: 'User' })
         setLoggedIn(true)
+        setActiveMenu('Dashboard')
         setAuthLoading(false)
         setAuthForm({ name: '', email: '', password: '', confirmPassword: '' })
       }, 900)
