@@ -64,7 +64,42 @@ import {
   Laptop,
   Tablet,
   Mouse,
+  Phone,
+  MessageCircle,
+  BookOpen,
+  PlayCircle,
+  Send,
+  LifeBuoy,
+  ExternalLink,
+  Globe,
+  Sparkles,
+  Headphones,
+  Zap,
 } from 'lucide-react'
+
+const initialUsers = [
+  { id: 'U001', name: 'Admin User', email: 'admin@ams.com', phone: '+91 98765 00001', role: 'Super Admin', department: 'IT Department', status: 'Active', lastLogin: '2 minutes ago', twoFactor: true, joined: '01-01-2022', avatarColor: 'bg-purple-600' },
+  { id: 'U002', name: 'Rohan Verma', email: 'rohan.verma@ams.com', phone: '+91 98765 00002', role: 'Admin', department: 'IT Department', status: 'Active', lastLogin: '1 hour ago', twoFactor: true, joined: '15-03-2022', avatarColor: 'bg-blue-600' },
+  { id: 'U003', name: 'Priya Nair', email: 'priya.nair@ams.com', phone: '+91 98765 00003', role: 'Manager', department: 'HR Department', status: 'Active', lastLogin: '3 hours ago', twoFactor: true, joined: '20-05-2022', avatarColor: 'bg-emerald-600' },
+  { id: 'U004', name: 'Karthik Reddy', email: 'karthik.reddy@ams.com', phone: '+91 98765 00004', role: 'Manager', department: 'Finance', status: 'Active', lastLogin: 'Yesterday', twoFactor: false, joined: '10-07-2022', avatarColor: 'bg-amber-600' },
+  { id: 'U005', name: 'Anjali Singh', email: 'anjali.singh@ams.com', phone: '+91 98765 00005', role: 'Manager', department: 'Operations', status: 'Active', lastLogin: '2 days ago', twoFactor: true, joined: '05-09-2022', avatarColor: 'bg-rose-600' },
+  { id: 'U006', name: 'Vikram Iyer', email: 'vikram.iyer@ams.com', phone: '+91 98765 00006', role: 'Employee', department: 'IT Department', status: 'Active', lastLogin: '5 hours ago', twoFactor: true, joined: '12-11-2022', avatarColor: 'bg-cyan-600' },
+  { id: 'U007', name: 'Neha Kapoor', email: 'neha.kapoor@ams.com', phone: '+91 98765 00007', role: 'Employee', department: 'Marketing', status: 'Active', lastLogin: '4 hours ago', twoFactor: false, joined: '01-02-2023', avatarColor: 'bg-indigo-600' },
+  { id: 'U008', name: 'Sandeep Joshi', email: 'sandeep.joshi@ams.com', phone: '+91 98765 00008', role: 'IT Support', department: 'IT Department', status: 'Active', lastLogin: '30 minutes ago', twoFactor: true, joined: '18-04-2023', avatarColor: 'bg-orange-600' },
+  { id: 'U009', name: 'Meera Patel', email: 'meera.patel@ams.com', phone: '+91 98765 00009', role: 'Viewer', department: 'Audit', status: 'Active', lastLogin: '1 week ago', twoFactor: true, joined: '25-06-2023', avatarColor: 'bg-teal-600' },
+  { id: 'U010', name: 'Arjun Mehta', email: 'arjun.mehta@ams.com', phone: '+91 98765 00010', role: 'Employee', department: 'Sales', status: 'Inactive', lastLogin: '2 months ago', twoFactor: false, joined: '10-08-2023', avatarColor: 'bg-pink-600' },
+  { id: 'U011', name: 'Pooja Shah', email: 'pooja.shah@ams.com', phone: '+91 98765 00011', role: 'Manager', department: 'Design Team', status: 'Suspended', lastLogin: '3 weeks ago', twoFactor: false, joined: '15-09-2023', avatarColor: 'bg-red-600' },
+  { id: 'U012', name: 'Rajiv Khanna', email: 'rajiv.khanna@ams.com', phone: '+91 98765 00012', role: 'Employee', department: 'Sales', status: 'Pending', lastLogin: 'Never', twoFactor: false, joined: '08-06-2025', avatarColor: 'bg-slate-500' },
+]
+
+const rolePermissions = {
+  'Super Admin': ['Full system access', 'User management', 'Settings', 'Reports', 'All assets', 'Vendor management'],
+  'Admin': ['Manage assets', 'User management', 'Reports', 'Maintenance', 'Vendor management'],
+  'Manager': ['View team assets', 'Approve assignments', 'Reports', 'Maintenance requests'],
+  'Employee': ['View assigned assets', 'Request assignments', 'Submit maintenance tickets'],
+  'IT Support': ['Manage maintenance', 'View all assets', 'QR scanner', 'Asset details'],
+  'Viewer': ['Read-only access', 'View reports', 'View asset details'],
+}
 
 const initialNotifications = [
   { id: 'N001', type: 'assignment', title: 'New Asset Assignment', desc: 'Dell Latitude 5440 (A1001) assigned to John Doe', time: '2 minutes ago', timestamp: Date.now() - 2*60*1000, read: false, target: 'Asset Assignment' },
@@ -82,6 +117,46 @@ const initialNotifications = [
   { id: 'N013', type: 'overdue', title: 'Overdue Return', desc: 'HP ProBook (A1020) was due 08-06-2024 — Benjamin Hall', time: '5 days ago', timestamp: Date.now() - 5*24*60*60*1000, read: false, target: 'Return Assets' },
   { id: 'N014', type: 'inventory', title: 'Low Stock Alert', desc: 'Available laptop inventory dropped below 5 units', time: '6 days ago', timestamp: Date.now() - 6*24*60*60*1000, read: true, target: 'Categories' },
   { id: 'N015', type: 'system', title: 'License Expiring', desc: 'Enterprise license valid till December 2026 — renew soon', time: '1 week ago', timestamp: Date.now() - 7*24*60*60*1000, read: true, target: 'Settings' },
+]
+
+const helpFaqs = [
+  { id: 'F01', category: 'Getting Started', q: 'How do I add a new asset to the system?', a: 'Navigate to the Assets module from the sidebar, then click the "+ Add New Asset" button. Fill in the required fields (Asset ID, Name, Category, Status, Assigned To, Purchase Date), upload an optional image, and click Save. The asset will appear instantly in your inventory list.' },
+  { id: 'F02', category: 'Getting Started', q: 'How can I assign an asset to an employee?', a: 'Go to Asset Assignment from the sidebar. Pick an available asset, click "Assign", then select the employee from the dropdown. You can also set a return-by date and add notes. The assignment is logged in the audit history automatically.' },
+  { id: 'F03', category: 'Getting Started', q: 'What do the different asset status colors mean?', a: 'Green = In Use (actively assigned), Blue = Available (in stock), Amber = Under Maintenance (with vendor or IT team), Red = Retired/Damaged (no longer usable), Gray = Pending Approval.' },
+  { id: 'F04', category: 'Assets', q: 'Can I generate and print QR codes for my assets?', a: 'Yes. Open any asset details page and click the "QR Code" tab. You can print individual QR labels or use the bulk-print feature from the Assets module. Scan them later via the QR Code Scanner section to instantly fetch asset info.' },
+  { id: 'F05', category: 'Assets', q: 'How do I track an asset that has been lost or damaged?', a: 'Open the asset detail page, change its status to "Damaged" or "Lost", add a note describing the situation, and optionally upload a photo. The incident is added to the asset history timeline and a notification is sent to admins.' },
+  { id: 'F06', category: 'Assets', q: 'Where can I see the complete history of an asset?', a: 'Click on any asset row to open its details. The "Maintenance History" and "Assignment History" tabs show every past event with date, employee, and notes — including return condition and warranty events.' },
+  { id: 'F07', category: 'Users & Roles', q: 'How do I add a new user and assign permissions?', a: 'Open the Users module, click "+ Add New User", fill in name/email/department, then choose a role (Super Admin, Admin, Manager, Employee, IT Support, Viewer). Each role comes with a pre-configured permission set which you can review before saving.' },
+  { id: 'F08', category: 'Users & Roles', q: 'What is Two-Factor Authentication and how do I enable it?', a: '2FA adds a second verification step at login. Go to Settings → Security tab and enable "Two-Factor Authentication". Users will then be prompted to install an authenticator app and scan a QR to register.' },
+  { id: 'F09', category: 'Users & Roles', q: 'Can a user have access to only specific departments?', a: 'Yes. Managers and Employees have automatic department-scoped access. For custom scoping, edit the user profile and set the "Department Scope" field — they will only see assets/employees within that department.' },
+  { id: 'F10', category: 'Maintenance', q: 'How do I schedule preventive maintenance for an asset?', a: 'Visit the Maintenance module, click "+ Schedule Maintenance", select the asset, the vendor, the date, and the type (Preventive / Repair / Inspection). You will receive notifications 7 days, 3 days, and 1 day before the due date.' },
+  { id: 'F11', category: 'Maintenance', q: 'Can vendors be linked to specific maintenance jobs?', a: 'Absolutely. When creating a maintenance ticket, the Vendor dropdown lists all active vendors. Once linked, the job and its cost appear in both the maintenance log and the vendor’s spend history.' },
+  { id: 'F12', category: 'Reports', q: 'What types of reports can I generate?', a: 'You can generate Asset Summary, Category-wise, Department-wise, Vendor Spend, Maintenance Cost, Depreciation, and Warranty Expiry reports. Each report supports custom date ranges and can be exported as PDF or CSV.' },
+  { id: 'F13', category: 'Reports', q: 'How do I export a report to PDF or Excel?', a: 'Open the Reports module, choose the report type and date range, then click "Generate Report". Once the preview appears, use the Export menu in the top-right (PDF / CSV / Excel). Exports respect the filters you applied.' },
+  { id: 'F14', category: 'Security', q: 'Is my data encrypted and backed up?', a: 'Yes. All data is encrypted at rest with AES-256 and in transit via TLS 1.3. Automatic daily backups are taken at 02:30 AM and retained for 30 days. You can trigger manual backups from Settings → System.' },
+  { id: 'F15', category: 'Security', q: 'How do I reset my password if I forget it?', a: 'On the login screen, click "Forgot Password?". Enter your registered email and a reset link valid for 30 minutes will be sent. Admins can also force-reset any user’s password from the Users module.' },
+  { id: 'F16', category: 'Billing', q: 'How do I upgrade my plan or buy more user seats?', a: 'Open Settings → Billing tab. You will see the current plan, seat usage, and next invoice date. Click "Upgrade Plan" to switch tiers or "Add Seats" to purchase more user licenses. All upgrades are pro-rated automatically.' },
+  { id: 'F17', category: 'Billing', q: 'Can I download my past invoices?', a: 'Yes. Settings → Billing → Invoices shows the last 24 months. Each entry has a Download PDF button. You can also email a copy directly to your accounts team from the same screen.' },
+]
+
+const helpVideos = [
+  { id: 'V01', title: 'Getting Started with AMS', desc: 'A 5-minute walkthrough covering the dashboard, sidebar and key workflows.', duration: '5:12', thumb: 'bg-gradient-to-br from-blue-500 to-indigo-600' },
+  { id: 'V02', title: 'Adding & Categorizing Assets', desc: 'Learn to create assets, attach categories and bulk-import via CSV.', duration: '7:38', thumb: 'bg-gradient-to-br from-emerald-500 to-teal-600' },
+  { id: 'V03', title: 'Assignments & Returns Workflow', desc: 'End-to-end demo of assigning, tracking and returning assets safely.', duration: '6:21', thumb: 'bg-gradient-to-br from-amber-500 to-orange-600' },
+  { id: 'V04', title: 'Scanning QR Codes on the Go', desc: 'Use the mobile-friendly scanner to look up and update assets instantly.', duration: '3:47', thumb: 'bg-gradient-to-br from-rose-500 to-pink-600' },
+  { id: 'V05', title: 'Generating Powerful Reports', desc: 'Filter, segment, export — and schedule automated weekly summaries.', duration: '8:05', thumb: 'bg-gradient-to-br from-purple-500 to-fuchsia-600' },
+  { id: 'V06', title: 'Managing Users & Permissions', desc: 'Set up roles, scopes and 2FA across your team in minutes.', duration: '4:30', thumb: 'bg-gradient-to-br from-cyan-500 to-sky-600' },
+]
+
+const helpArticles = [
+  { id: 'A01', title: 'Complete Asset Lifecycle Guide', cat: 'Guide', read: '8 min read' },
+  { id: 'A02', title: 'Best Practices for Asset Tagging', cat: 'Best Practice', read: '5 min read' },
+  { id: 'A03', title: 'Setting Up Bulk Imports via CSV', cat: 'How-to', read: '6 min read' },
+  { id: 'A04', title: 'Configuring Email Notifications', cat: 'Setup', read: '4 min read' },
+  { id: 'A05', title: 'Understanding Depreciation Methods', cat: 'Reference', read: '10 min read' },
+  { id: 'A06', title: 'Integrating AMS with Slack & Teams', cat: 'Integration', read: '7 min read' },
+  { id: 'A07', title: 'Mobile App Quick-Start Checklist', cat: 'Guide', read: '3 min read' },
+  { id: 'A08', title: 'GDPR Compliance & Data Retention', cat: 'Compliance', read: '9 min read' },
 ]
 
 const dummyVendors = [
@@ -360,6 +435,23 @@ function App() {
   const markAllNotifRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   const clearAllNotifs = () => setNotifications([])
   const deleteNotif = (id) => setNotifications(prev => prev.filter(n => n.id !== id))
+
+  // Users state
+  const [users, setUsers] = useState(initialUsers)
+  const [userRoleFilter, setUserRoleFilter] = useState('All')
+  const [userStatusFilter, setUserStatusFilter] = useState('All')
+  const [userSearch, setUserSearch] = useState('')
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', role: 'Employee', department: '' })
+
+  // Need Help state
+  const [helpSearch, setHelpSearch] = useState('')
+  const [helpCategory, setHelpCategory] = useState('All')
+  const [helpOpenFaq, setHelpOpenFaq] = useState(null)
+  const [helpTab, setHelpTab] = useState('FAQs')
+  const [ticketForm, setTicketForm] = useState({ subject: '', category: 'General Inquiry', priority: 'Medium', description: '' })
+  const [ticketSent, setTicketSent] = useState(false)
 
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
@@ -2628,6 +2720,353 @@ function App() {
                     </div>
                   )
                 })()
+              ) : activeMenu === 'Users' ? (
+                (() => {
+                  const roleColors = {
+                    'Super Admin': 'bg-purple-100 text-purple-700 border-purple-200',
+                    'Admin': 'bg-blue-100 text-blue-700 border-blue-200',
+                    'Manager': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                    'Employee': 'bg-amber-100 text-amber-700 border-amber-200',
+                    'IT Support': 'bg-orange-100 text-orange-700 border-orange-200',
+                    'Viewer': 'bg-teal-100 text-teal-700 border-teal-200',
+                  }
+                  const statusColors = {
+                    'Active': 'bg-green-100 text-green-700 border-green-200',
+                    'Inactive': 'bg-gray-100 text-gray-700 border-gray-200',
+                    'Suspended': 'bg-red-100 text-red-700 border-red-200',
+                    'Pending': 'bg-amber-100 text-amber-700 border-amber-200',
+                  }
+                  const roles = ['All', 'Super Admin', 'Admin', 'Manager', 'Employee', 'IT Support', 'Viewer']
+                  const statuses = ['All', 'Active', 'Inactive', 'Suspended', 'Pending']
+
+                  const filtered = users.filter(u => {
+                    const inRole = userRoleFilter === 'All' || u.role === userRoleFilter
+                    const inStatus = userStatusFilter === 'All' || u.status === userStatusFilter
+                    const q = userSearch.toLowerCase()
+                    const inSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.department.toLowerCase().includes(q) || u.id.toLowerCase().includes(q)
+                    return inRole && inStatus && inSearch
+                  })
+
+                  const getInitials = (name) => name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()
+
+                  const stats = [
+                    { label: 'Total Users', value: users.length, icon: Users, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Active', value: users.filter(u => u.status === 'Active').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Admins', value: users.filter(u => u.role === 'Super Admin' || u.role === 'Admin').length, icon: Shield, color: 'text-purple-500', bg: 'bg-purple-100' },
+                    { label: 'Pending Invites', value: users.filter(u => u.status === 'Pending').length, icon: Mail, color: 'text-amber-500', bg: 'bg-amber-100' },
+                  ]
+
+                  const handleAddUser = () => {
+                    if (!newUser.name || !newUser.email) return alert('Please fill name and email')
+                    const next = {
+                      id: `U${String(users.length + 1).padStart(3, '0')}`,
+                      ...newUser,
+                      status: 'Pending',
+                      lastLogin: 'Never',
+                      twoFactor: false,
+                      joined: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
+                      avatarColor: ['bg-blue-600','bg-emerald-600','bg-amber-600','bg-rose-600','bg-cyan-600','bg-indigo-600'][users.length % 6],
+                    }
+                    setUsers([...users, next])
+                    setNewUser({ name: '', email: '', phone: '', role: 'Employee', department: '' })
+                    setShowAddUser(false)
+                    alert(`✓ Invite sent to ${next.email}`)
+                  }
+
+                  const toggleStatus = (id) => {
+                    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: u.status === 'Active' ? 'Suspended' : 'Active' } : u))
+                  }
+                  const deleteUser = (id) => {
+                    if (confirm('Delete this user permanently?')) {
+                      setUsers(prev => prev.filter(u => u.id !== id))
+                      setSelectedUser(null)
+                    }
+                  }
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Users</h2>
+                          <p className="text-sm text-gray-500 mt-1">Dashboard <span className="mx-1">/</span> Users · Manage system users and their access</p>
+                        </div>
+                        <button
+                          onClick={() => setShowAddUser(true)}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add User
+                        </button>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => {
+                          const Icon = s.icon
+                          return (
+                            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-0.5">{s.value}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Toolbar */}
+                      <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Role:</span>
+                            <div className="relative">
+                              <select value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+                                {roles.map(r => <option key={r}>{r}</option>)}
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status:</span>
+                            <div className="relative">
+                              <select value={userStatusFilter} onChange={(e) => setUserStatusFilter(e.target.value)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+                                {statuses.map(s => <option key={s}>{s}</option>)}
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="relative w-full sm:w-72">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input type="text" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Search users..." className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+                        </div>
+                      </div>
+
+                      {/* Users Table */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200">
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Login</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">2FA</th>
+                                <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {filtered.length === 0 ? (
+                                <tr><td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">No users match your filters</td></tr>
+                              ) : filtered.map((u) => (
+                                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4">
+                                    <button onClick={() => setSelectedUser(u)} className="flex items-center gap-3 text-left">
+                                      <div className={`w-10 h-10 rounded-full ${u.avatarColor} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                                        {getInitials(u.name)}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">{u.name}</p>
+                                        <p className="text-xs text-gray-500">{u.email}</p>
+                                      </div>
+                                    </button>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${roleColors[u.role] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                      {u.role}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{u.department}</td>
+                                  <td className="px-6 py-4 text-sm text-gray-700">{u.lastLogin}</td>
+                                  <td className="px-6 py-4">
+                                    {u.twoFactor ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                        <Shield className="w-3 h-3" />
+                                        Enabled
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500">
+                                        Off
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${statusColors[u.status]}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'Active' ? 'bg-green-500' : u.status === 'Pending' ? 'bg-amber-500' : u.status === 'Suspended' ? 'bg-red-500' : 'bg-gray-400'}`} />
+                                      {u.status}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button onClick={() => setSelectedUser(u)} title="View" className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                      <button onClick={() => alert(`Reset password email sent to ${u.email}`)} title="Reset Password" className="w-8 h-8 rounded-md bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <RotateCw className="w-4 h-4" />
+                                      </button>
+                                      <button onClick={() => toggleStatus(u.id)} title={u.status === 'Active' ? 'Suspend' : 'Activate'} className={`w-8 h-8 rounded-md ${u.status === 'Active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white flex items-center justify-center transition-colors shadow-sm`}>
+                                        {u.status === 'Active' ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                                      </button>
+                                      <button onClick={() => deleteUser(u.id)} title="Delete" disabled={u.role === 'Super Admin'} className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="px-6 py-3 border-t border-gray-100 text-xs text-gray-500">
+                          Showing {filtered.length} of {users.length} users
+                        </div>
+                      </div>
+
+                      {/* User Detail Modal */}
+                      {selectedUser && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setSelectedUser(null)}>
+                          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                            <div className={`h-24 ${selectedUser.avatarColor} relative`}>
+                              <button onClick={() => setSelectedUser(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center text-white">✕</button>
+                              <div className={`absolute -bottom-10 left-6 w-20 h-20 rounded-full ${selectedUser.avatarColor} ring-4 ring-white shadow-lg flex items-center justify-center text-white text-2xl font-bold`}>
+                                {getInitials(selectedUser.name)}
+                              </div>
+                            </div>
+                            <div className="pt-12 px-6 pb-6">
+                              <div className="flex items-start justify-between flex-wrap gap-2">
+                                <div>
+                                  <h3 className="text-xl font-bold text-gray-900">{selectedUser.name}</h3>
+                                  <p className="text-sm text-gray-500 mt-0.5">{selectedUser.id} · Joined {selectedUser.joined}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${roleColors[selectedUser.role]}`}>{selectedUser.role}</span>
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${statusColors[selectedUser.status]}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${selectedUser.status === 'Active' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                    {selectedUser.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Contact</h4>
+                                  <div className="space-y-2.5 text-sm">
+                                    <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-gray-400" /><a href={`mailto:${selectedUser.email}`} className="text-blue-600 hover:underline">{selectedUser.email}</a></div>
+                                    <div className="flex items-center gap-3"><Smartphone className="w-4 h-4 text-gray-400" /><span className="text-gray-800">{selectedUser.phone}</span></div>
+                                    <div className="flex items-center gap-3"><Building2 className="w-4 h-4 text-gray-400" /><span className="text-gray-800">{selectedUser.department}</span></div>
+                                    <div className="flex items-center gap-3"><Clock className="w-4 h-4 text-gray-400" /><span className="text-gray-800">Last login: {selectedUser.lastLogin}</span></div>
+                                  </div>
+                                </div>
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Security</h4>
+                                  <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
+                                      <div className="flex items-center gap-2">
+                                        <Shield className="w-4 h-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-800">Two-Factor Auth</span>
+                                      </div>
+                                      <span className={`text-xs font-bold ${selectedUser.twoFactor ? 'text-emerald-600' : 'text-gray-400'}`}>{selectedUser.twoFactor ? 'Enabled' : 'Disabled'}</span>
+                                    </div>
+                                    <button onClick={() => alert(`Password reset email sent to ${selectedUser.email}`)} className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                                      <div className="flex items-center gap-2">
+                                        <RotateCw className="w-4 h-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-800">Reset Password</span>
+                                      </div>
+                                      <ArrowRight className="w-4 h-4 text-gray-400" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-6">
+                                <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Role Permissions</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {(rolePermissions[selectedUser.role] || []).map((p, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                      <span className="text-sm text-gray-700">{p}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => deleteUser(selectedUser.id)} disabled={selectedUser.role === 'Super Admin'} className="px-5 py-2 rounded-lg text-sm font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                Delete User
+                              </button>
+                              <button onClick={() => { toggleStatus(selectedUser.id); setSelectedUser({ ...selectedUser, status: selectedUser.status === 'Active' ? 'Suspended' : 'Active' }) }} className="px-5 py-2 rounded-lg text-sm font-semibold text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors">
+                                {selectedUser.status === 'Active' ? 'Suspend' : 'Activate'}
+                              </button>
+                              <button onClick={() => alert(`Edit ${selectedUser.name}`)} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                                <Edit3 className="w-4 h-4" />
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Add User Modal */}
+                      {showAddUser && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowAddUser(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">Add New User</h3>
+                              <button onClick={() => setShowAddUser(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Full Name <span className="text-red-500">*</span></label>
+                                  <input type="text" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} placeholder="e.g. Rahul Kumar" className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Phone</label>
+                                  <input type="text" value={newUser.phone} onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })} placeholder="+91 98765 00000" className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Email <span className="text-red-500">*</span></label>
+                                <input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="user@ams.com" className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Role</label>
+                                  <div className="relative">
+                                    <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                      {['Super Admin','Admin','Manager','Employee','IT Support','Viewer'].map(r => <option key={r}>{r}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-800 mb-1.5">Department</label>
+                                  <input type="text" value={newUser.department} onChange={(e) => setNewUser({ ...newUser, department: e.target.value })} placeholder="e.g. IT Department" className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                              </div>
+                              <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 flex items-start gap-2">
+                                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-gray-700">An invitation email will be sent to the user. They&apos;ll set their password on first login.</p>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setShowAddUser(false)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">Cancel</button>
+                              <button onClick={handleAddUser} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                                <Mail className="w-4 h-4" />
+                                Send Invitation
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()
               ) : activeMenu === 'Notifications' ? (
                 (() => {
                   const filters = ['All', 'Unread', 'Read', 'Assignment', 'Maintenance', 'Warranty', 'System']
@@ -3848,6 +4287,413 @@ function App() {
                             })}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Need Help?' ? (
+                (() => {
+                  const categories = ['All', 'Getting Started', 'Assets', 'Users & Roles', 'Maintenance', 'Reports', 'Security', 'Billing']
+                  const filteredFaqs = helpFaqs.filter(f => {
+                    const matchCat = helpCategory === 'All' || f.category === helpCategory
+                    const q = helpSearch.toLowerCase().trim()
+                    const matchQ = !q || f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
+                    return matchCat && matchQ
+                  })
+                  const handleTicketSubmit = (e) => {
+                    e.preventDefault()
+                    if (!ticketForm.subject.trim() || !ticketForm.description.trim()) return
+                    setTicketSent(true)
+                    setTimeout(() => {
+                      setTicketSent(false)
+                      setTicketForm({ subject: '', category: 'General Inquiry', priority: 'Medium', description: '' })
+                    }, 3500)
+                  }
+                  return (
+                    <div className="p-6 md:p-8 space-y-6 bg-gradient-to-b from-blue-50/40 via-white to-white min-h-full">
+                      {/* Hero */}
+                      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0d1b4c] via-[#1e2d6b] to-blue-700 text-white px-6 md:px-10 py-10 md:py-12 shadow-xl">
+                        <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/10 blur-3xl"></div>
+                        <div className="absolute -right-20 bottom-0 w-72 h-72 rounded-full bg-blue-400/20 blur-3xl"></div>
+                        <div className="relative">
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur text-xs font-semibold mb-4">
+                            <LifeBuoy className="w-3.5 h-3.5" />
+                            Help & Support Center
+                          </div>
+                          <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">Hello Admin, how can we help?</h1>
+                          <p className="text-blue-100 text-sm md:text-base max-w-2xl mb-6">Search our knowledge base, browse FAQs, watch quick tutorials, or reach out to our support team — we usually reply within an hour.</p>
+                          <div className="relative max-w-2xl">
+                            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={helpSearch}
+                              onChange={(e) => { setHelpSearch(e.target.value); setHelpTab('FAQs') }}
+                              placeholder="Search for answers, e.g. 'How to add an asset?'"
+                              className="w-full pl-12 pr-32 py-4 rounded-xl bg-white text-gray-900 text-sm shadow-2xl focus:outline-none focus:ring-4 focus:ring-blue-300/50 placeholder:text-gray-400"
+                            />
+                            <button className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-md">
+                              Search
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quick contact strip */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                          { icon: Phone, label: 'Call Support', value: '+1 (800) 555-AMS-1', sub: 'Mon – Fri · 9 AM to 8 PM IST', accent: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+                          { icon: Mail, label: 'Email Us', value: 'support@ams.com', sub: 'Reply within 1 business hour', accent: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-700' },
+                          { icon: MessageCircle, label: 'Live Chat', value: 'Start a conversation', sub: '3 agents online right now', accent: 'from-purple-500 to-fuchsia-600', bg: 'bg-purple-50', text: 'text-purple-700' },
+                        ].map((c, i) => {
+                          const Icon = c.icon
+                          return (
+                            <div key={i} className="group bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                              <div className="flex items-start gap-4">
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.accent} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform`}>
+                                  <Icon className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{c.label}</div>
+                                  <div className="text-base font-bold text-gray-900 mt-0.5 truncate">{c.value}</div>
+                                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    {c.sub}
+                                  </div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Tabs */}
+                      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="border-b border-gray-200 px-2 md:px-6 flex items-center gap-1 overflow-x-auto">
+                          {[
+                            { id: 'FAQs', label: 'FAQs', icon: HelpCircle, count: helpFaqs.length },
+                            { id: 'Videos', label: 'Video Tutorials', icon: PlayCircle, count: helpVideos.length },
+                            { id: 'Knowledge', label: 'Knowledge Base', icon: BookOpen, count: helpArticles.length },
+                            { id: 'Ticket', label: 'Submit a Ticket', icon: Send, count: null },
+                          ].map(t => {
+                            const Icon = t.icon
+                            const active = helpTab === t.id
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => setHelpTab(t.id)}
+                                className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold whitespace-nowrap transition-colors ${active ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}
+                              >
+                                <Icon className="w-4 h-4" />
+                                {t.label}
+                                {t.count !== null && (
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>{t.count}</span>
+                                )}
+                                {active && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t"></span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        <div className="p-6">
+                          {/* FAQs Tab */}
+                          {helpTab === 'FAQs' && (
+                            <div>
+                              <div className="flex flex-wrap gap-2 mb-5">
+                                {categories.map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => setHelpCategory(c)}
+                                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${helpCategory === c ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}
+                                  >
+                                    {c}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {filteredFaqs.length === 0 ? (
+                                <div className="text-center py-16">
+                                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                                    <Search className="w-7 h-7 text-gray-400" />
+                                  </div>
+                                  <h3 className="text-base font-semibold text-gray-900 mb-1">No results found</h3>
+                                  <p className="text-sm text-gray-500">Try a different keyword or browse the knowledge base.</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {filteredFaqs.map((f) => {
+                                    const open = helpOpenFaq === f.id
+                                    return (
+                                      <div key={f.id} className={`border rounded-xl transition-all duration-200 ${open ? 'border-blue-300 bg-blue-50/30 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                                        <button
+                                          onClick={() => setHelpOpenFaq(open ? null : f.id)}
+                                          className="w-full flex items-center gap-4 px-5 py-4 text-left"
+                                        >
+                                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${open ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                            <HelpCircle className="w-4 h-4" />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">{f.category}</div>
+                                            <div className="text-sm font-semibold text-gray-900">{f.q}</div>
+                                          </div>
+                                          <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-blue-600' : ''}`} />
+                                        </button>
+                                        {open && (
+                                          <div className="px-5 pb-5 pl-[68px]">
+                                            <p className="text-sm text-gray-600 leading-relaxed">{f.a}</p>
+                                            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-blue-100">
+                                              <span className="text-xs text-gray-500">Was this helpful?</span>
+                                              <button className="text-xs font-semibold text-emerald-600 hover:underline">👍 Yes</button>
+                                              <button className="text-xs font-semibold text-gray-500 hover:underline">👎 No</button>
+                                              <span className="text-xs text-gray-300">·</span>
+                                              <button className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+                                                Open full article <ExternalLink className="w-3 h-3" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Videos Tab */}
+                          {helpTab === 'Videos' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                              {helpVideos.map(v => (
+                                <div key={v.id} className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer">
+                                  <div className={`relative h-40 ${v.thumb} flex items-center justify-center`}>
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                                    <div className="relative w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                      <PlayCircle className="w-8 h-8 text-blue-600 fill-current" />
+                                    </div>
+                                    <div className="absolute bottom-3 right-3 px-2 py-1 rounded bg-black/60 text-white text-xs font-semibold">{v.duration}</div>
+                                  </div>
+                                  <div className="p-4">
+                                    <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{v.title}</h4>
+                                    <p className="text-xs text-gray-500 leading-relaxed">{v.desc}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Knowledge Base Tab */}
+                          {helpTab === 'Knowledge' && (
+                            <div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {helpArticles.map(a => (
+                                  <div key={a.id} className="group flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                                    <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center flex-shrink-0">
+                                      <FileText className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-700">{a.cat}</span>
+                                        <span className="text-[10px] text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {a.read}</span>
+                                      </div>
+                                      <h4 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{a.title}</h4>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-6 p-5 rounded-xl border border-dashed border-blue-300 bg-blue-50/50 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                  <Globe className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-bold text-gray-900">Browse the full documentation</h4>
+                                  <p className="text-xs text-gray-600">Over 120+ in-depth articles covering every feature of AMS.</p>
+                                </div>
+                                <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors">
+                                  Visit Docs <ExternalLink className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Submit a Ticket Tab */}
+                          {helpTab === 'Ticket' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                              <div className="lg:col-span-2">
+                                {ticketSent ? (
+                                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-8 text-center">
+                                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                                      <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1">Ticket submitted successfully!</h3>
+                                    <p className="text-sm text-gray-600">Your ticket ID is <span className="font-mono font-bold text-emerald-700">#T{Math.floor(100000 + Math.random()*900000)}</span>. We will email you a confirmation shortly.</p>
+                                  </div>
+                                ) : (
+                                  <form onSubmit={handleTicketSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+                                    <div>
+                                      <h3 className="text-base font-bold text-gray-900">Tell us what is going on</h3>
+                                      <p className="text-xs text-gray-500 mt-0.5">Provide as much detail as possible so we can help you faster.</p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">Subject <span className="text-red-500">*</span></label>
+                                      <input
+                                        type="text"
+                                        value={ticketForm.subject}
+                                        onChange={(e) => setTicketForm({ ...ticketForm, subject: e.target.value })}
+                                        placeholder="Brief summary of your issue"
+                                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Category</label>
+                                        <select
+                                          value={ticketForm.category}
+                                          onChange={(e) => setTicketForm({ ...ticketForm, category: e.target.value })}
+                                          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                        >
+                                          <option>General Inquiry</option>
+                                          <option>Bug / Technical Issue</option>
+                                          <option>Feature Request</option>
+                                          <option>Billing & Subscription</option>
+                                          <option>Account Access</option>
+                                          <option>Integrations</option>
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">Priority</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {['Low', 'Medium', 'High'].map(p => (
+                                            <button
+                                              type="button"
+                                              key={p}
+                                              onClick={() => setTicketForm({ ...ticketForm, priority: p })}
+                                              className={`px-2 py-2 rounded-lg text-xs font-semibold border transition-all ${ticketForm.priority === p ? (p === 'High' ? 'bg-red-50 border-red-300 text-red-700' : p === 'Medium' ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-emerald-50 border-emerald-300 text-emerald-700') : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                            >
+                                              {p}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">Describe your issue <span className="text-red-500">*</span></label>
+                                      <textarea
+                                        value={ticketForm.description}
+                                        onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
+                                        rows={6}
+                                        placeholder="Steps to reproduce, what you expected vs what happened, screenshots / asset IDs etc."
+                                        className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                      />
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                      <button type="button" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 border border-gray-200">
+                                        <UploadCloud className="w-4 h-4" />
+                                        Attach files
+                                      </button>
+                                      <button
+                                        type="submit"
+                                        disabled={!ticketForm.subject.trim() || !ticketForm.description.trim()}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                      >
+                                        <Send className="w-4 h-4" />
+                                        Submit Ticket
+                                      </button>
+                                    </div>
+                                  </form>
+                                )}
+                              </div>
+
+                              <div className="space-y-4">
+                                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 text-white shadow-lg">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Headphones className="w-5 h-5" />
+                                    <h4 className="text-sm font-bold uppercase tracking-wider">Premium Support</h4>
+                                  </div>
+                                  <p className="text-xs text-blue-100 mb-4 leading-relaxed">Get priority access to a dedicated account manager, 24/7 phone support and quarterly business reviews.</p>
+                                  <button className="w-full py-2 rounded-lg bg-white text-blue-700 text-xs font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                                    <Sparkles className="w-4 h-4" />
+                                    Upgrade Plan
+                                  </button>
+                                </div>
+
+                                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-amber-500" />
+                                    Average response times
+                                  </h4>
+                                  <div className="space-y-3">
+                                    {[
+                                      { label: 'High priority', value: '< 15 min', color: 'bg-red-500', width: 'w-1/5' },
+                                      { label: 'Medium priority', value: '< 1 hour', color: 'bg-amber-500', width: 'w-2/5' },
+                                      { label: 'Low priority', value: '< 4 hours', color: 'bg-emerald-500', width: 'w-3/5' },
+                                    ].map((r, i) => (
+                                      <div key={i}>
+                                        <div className="flex items-center justify-between text-xs mb-1">
+                                          <span className="text-gray-600 font-medium">{r.label}</span>
+                                          <span className="font-bold text-gray-900">{r.value}</span>
+                                        </div>
+                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                          <div className={`h-full ${r.color} ${r.width} rounded-full`}></div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                                  <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-emerald-500" />
+                                    System status
+                                  </h4>
+                                  <div className="space-y-2.5 text-xs">
+                                    {[
+                                      { name: 'API Service', status: 'Operational' },
+                                      { name: 'Database', status: 'Operational' },
+                                      { name: 'File Storage', status: 'Operational' },
+                                      { name: 'Email Delivery', status: 'Operational' },
+                                    ].map((s, i) => (
+                                      <div key={i} className="flex items-center justify-between">
+                                        <span className="text-gray-600">{s.name}</span>
+                                        <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                          {s.status}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <button className="w-full mt-4 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-center gap-1.5">
+                                    View status page <ExternalLink className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer / Community CTA */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow">
+                            <Users className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold text-gray-900">Join the AMS community</h4>
+                            <p className="text-xs text-gray-500">Connect with 5,000+ asset managers, share tips, and shape the product roadmap.</p>
+                          </div>
+                          <button className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold whitespace-nowrap">Join now</button>
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow">
+                            <Info className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold text-gray-900">App version & changelog</h4>
+                            <p className="text-xs text-gray-500">You are on AMS <span className="font-mono font-semibold text-gray-700">v3.4.1</span> — see what is new in the latest release.</p>
+                          </div>
+                          <button className="px-4 py-2 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-semibold whitespace-nowrap">View changelog</button>
+                        </div>
                       </div>
                     </div>
                   )
