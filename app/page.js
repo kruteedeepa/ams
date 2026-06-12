@@ -31,7 +31,50 @@ import {
   Trash2,
   ChevronRight,
   ChevronLeft,
+  Monitor,
+  CheckSquare,
+  Package,
+  FileText,
+  Droplet,
+  Printer,
+  RotateCw,
 } from 'lucide-react'
+
+// Donut chart component using SVG
+function DonutChart({ data, size = 200, strokeWidth = 36 }) {
+  const radius = (size - strokeWidth) / 2
+  const cx = size / 2
+  const cy = size / 2
+  const circumference = 2 * Math.PI * radius
+  const total = data.reduce((sum, d) => sum + d.value, 0)
+  let cumulative = 0
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+      <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
+      {data.map((seg, idx) => {
+        const value = seg.value
+        const dash = (value / total) * circumference
+        const offset = (cumulative / total) * circumference
+        cumulative += value
+        return (
+          <circle
+            key={idx}
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${dash} ${circumference - dash}`}
+            strokeDashoffset={-offset}
+            className="transition-all duration-500"
+          />
+        )
+      })}
+    </svg>
+  )
+}
 
 const dummyEmployees = [
   { id: 'E1001', name: 'John Doe', department: 'IT Department', designation: 'System Administrator', email: 'john.doe@company.com', phone: '9876543210' },
@@ -84,6 +127,12 @@ function App() {
   const [empSearch, setEmpSearch] = useState('')
   const [empPage, setEmpPage] = useState(1)
   const EMP_PER_PAGE = 5
+
+  // Reports state
+  const [reportType, setReportType] = useState('Asset Summary')
+  const [fromDate, setFromDate] = useState('2024-01-01')
+  const [toDate, setToDate] = useState('2024-12-31')
+  const [reportGenerated, setReportGenerated] = useState(0)
 
   const [form, setForm] = useState({
     assetName: '',
@@ -765,6 +814,191 @@ function App() {
                         </div>
                       </div>
                     </>
+                  )
+                })()
+              ) : activeMenu === 'Reports' ? (
+                (() => {
+                  const categoryData = [
+                    { label: 'Laptops', value: 540, color: '#3b82f6' },
+                    { label: 'Desktops', value: 320, color: '#22c55e' },
+                    { label: 'Printers', value: 150, color: '#f59e0b' },
+                    { label: 'SSD', value: 100, color: '#8b5cf6' },
+                    { label: 'Peripherals', value: 70, color: '#f97316' },
+                    { label: 'Others', value: 70, color: '#ef4444' },
+                  ]
+                  const statusData = [
+                    { label: 'Assigned', value: 945, color: '#22c55e' },
+                    { label: 'Available', value: 210, color: '#f59e0b' },
+                    { label: 'Maintenance', value: 95, color: '#ef4444' },
+                  ]
+                  const totalCat = categoryData.reduce((s, d) => s + d.value, 0)
+                  const totalStat = statusData.reduce((s, d) => s + d.value, 0)
+                  const stats = [
+                    { label: 'Total Assets', value: 1250, icon: Monitor, bg: 'bg-blue-100', color: 'text-blue-500' },
+                    { label: 'Assigned Assets', value: 945, icon: CheckSquare, bg: 'bg-emerald-100', color: 'text-emerald-500' },
+                    { label: 'Available Assets', value: 210, icon: Package, bg: 'bg-amber-100', color: 'text-amber-500' },
+                    { label: 'Under Maintenance', value: 95, icon: Wrench, bg: 'bg-red-100', color: 'text-red-500' },
+                  ]
+                  const activities = [
+                    { icon: Droplet, color: 'text-blue-500', bg: 'bg-blue-100', text: 'Dell Laptop (A1001) assigned to John Doe', time: '10 min ago' },
+                    { icon: Printer, color: 'text-amber-500', bg: 'bg-amber-50', text: 'HP Printer (A1002) added to inventory', time: '1 hour ago' },
+                    { icon: RotateCw, color: 'text-red-500', bg: 'bg-red-100', text: 'Apple MacBook (A1003) returned/exited', time: '2 hours ago' },
+                    { icon: Wrench, color: 'text-purple-500', bg: 'bg-purple-100', text: 'Canon Scanner (A1010) sent for maintenance', time: '5 hours ago' },
+                    { icon: UserPlus, color: 'text-green-500', bg: 'bg-green-100', text: 'New employee Mary Smith (E1002) added', time: 'Yesterday' },
+                  ]
+
+                  return (
+                    <div key={reportGenerated} className="animate-in fade-in duration-300">
+                      {/* Header */}
+                      <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Reports</h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Dashboard <span className="mx-1">/</span> Reports
+                        </p>
+                      </div>
+
+                      {/* Filter Bar */}
+                      <div className="flex items-end gap-4 flex-wrap mb-6">
+                        <div className="flex-1 min-w-[600px] bg-white border border-gray-200 rounded-xl p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-1.5">Select Report</label>
+                            <div className="relative">
+                              <select
+                                value={reportType}
+                                onChange={(e) => setReportType(e.target.value)}
+                                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                              >
+                                <option>Asset Summary</option>
+                                <option>Assignment Report</option>
+                                <option>Maintenance Report</option>
+                                <option>Vendor Report</option>
+                                <option>Depreciation Report</option>
+                              </select>
+                              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-1.5">From Date</label>
+                            <input
+                              type="date"
+                              value={fromDate}
+                              onChange={(e) => setFromDate(e.target.value)}
+                              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-1.5">To Date</label>
+                            <input
+                              type="date"
+                              value={toDate}
+                              onChange={(e) => setToDate(e.target.value)}
+                              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setReportGenerated((n) => n + 1)}
+                          className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm h-[58px]"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Generate Report
+                        </button>
+                      </div>
+
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                        {stats.map((s, idx) => {
+                          const Icon = s.icon
+                          return (
+                            <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-3xl font-bold text-gray-900 mt-0.5">{s.value.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Charts Row */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        {/* Assets by Category */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-5">Assets by Category</h3>
+                          <div className="flex items-center gap-4">
+                            <div className="flex-shrink-0">
+                              <DonutChart data={categoryData} size={180} strokeWidth={32} />
+                            </div>
+                            <div className="flex-1 space-y-2.5">
+                              {categoryData.map((d, i) => (
+                                <div key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: d.color }} />
+                                  <div className="leading-tight">
+                                    <div className="font-semibold text-gray-800">{d.label}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {d.value} ({((d.value / totalCat) * 100).toFixed(1)}%)
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Assets by Status */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-gray-900 mb-5">Assets by Status</h3>
+                          <div className="flex items-center gap-4">
+                            <div className="flex-shrink-0">
+                              <DonutChart data={statusData} size={180} strokeWidth={32} />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              {statusData.map((d, i) => (
+                                <div key={i} className="flex items-start gap-2 text-sm">
+                                  <span className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: d.color }} />
+                                  <div className="leading-tight">
+                                    <div className="font-semibold text-gray-800">{d.label}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {d.value} ({((d.value / totalStat) * 100).toFixed(1)}%)
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Recent Activity */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
+                          <h3 className="text-lg font-bold text-gray-900 mb-5">Recent Activity</h3>
+                          <div className="flex-1 space-y-4">
+                            {activities.map((a, i) => {
+                              const Icon = a.icon
+                              return (
+                                <div key={i} className="flex gap-3">
+                                  <div className={`w-9 h-9 rounded-full ${a.bg} flex items-center justify-center flex-shrink-0`}>
+                                    <Icon className={`w-4 h-4 ${a.color}`} />
+                                  </div>
+                                  <div className="flex-1 leading-tight">
+                                    <p className="text-sm text-gray-800">{a.text}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">{a.time}</p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <button
+                            onClick={() => alert('Full report view would open here')}
+                            className="w-full mt-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                          >
+                            View Full Report
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )
                 })()
               ) : (
