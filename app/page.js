@@ -298,6 +298,18 @@ function App() {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [newAssign, setNewAssign] = useState({ assetId: '', empId: '', returnDate: '' })
 
+  // Return Assets state
+  const [returnTab, setReturnTab] = useState('Pending')
+  const [returnSearch, setReturnSearch] = useState('')
+  const [selectedReturns, setSelectedReturns] = useState([])
+  const [returnModalRow, setReturnModalRow] = useState(null)
+  const [returnForm, setReturnForm] = useState({ date: new Date().toISOString().slice(0,10), condition: 'Good', notes: '' })
+  const [returnedRecords, setReturnedRecords] = useState([
+    { id: 'RT4001', assetId: 'A1004', assetName: 'Samsung 24" Monitor', employee: 'Mike Johnson', returnDate: '20-04-2024', condition: 'Good', notes: 'Working perfectly' },
+    { id: 'RT4002', assetId: 'A1002', assetName: 'HP LaserJet Pro', employee: 'David Lee', returnDate: '18-03-2024', condition: 'Damaged', notes: 'Paper tray cracked' },
+    { id: 'RT4003', assetId: 'A1001', assetName: 'Dell Latitude 5440', employee: 'Mike Johnson', returnDate: '15-02-2024', condition: 'Good', notes: 'Returned in original condition' },
+  ])
+
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
   const [selectedAssetId, setSelectedAssetId] = useState(null)
@@ -2475,6 +2487,333 @@ function App() {
                           </table>
                         </div>
                       </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Return Assets' ? (
+                (() => {
+                  // Pending = Active + Overdue assignments
+                  const pending = dummyAssignments.filter(a => a.status === 'Active' || a.status === 'Overdue')
+                  const q = returnSearch.toLowerCase()
+                  const pendingFiltered = pending.filter(a => !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q))
+                  const recentFiltered = returnedRecords.filter(a => !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q))
+
+                  const overdueCount = pending.filter(a => a.status === 'Overdue').length
+                  const today = new Date().toISOString().slice(0,10)
+                  const returnedToday = returnedRecords.filter(r => {
+                    const parts = r.returnDate.split('-')
+                    return `${parts[2]}-${parts[1]}-${parts[0]}` === today
+                  }).length
+                  const stats = [
+                    { label: 'Pending Returns', value: pending.length, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Overdue', value: overdueCount, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-100' },
+                    { label: 'Returned This Month', value: returnedRecords.length, icon: RotateCw, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Returned Today', value: returnedToday, icon: CheckCircle2, color: 'text-amber-500', bg: 'bg-amber-100' },
+                  ]
+
+                  const conditionBadge = (c) =>
+                    c === 'Good' ? 'bg-green-100 text-green-700 border-green-200'
+                    : c === 'Damaged' ? 'bg-amber-100 text-amber-700 border-amber-200'
+                    : 'bg-red-100 text-red-700 border-red-200'
+
+                  const toggleSelect = (id) => {
+                    setSelectedReturns((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+                  }
+                  const toggleSelectAll = () => {
+                    if (selectedReturns.length === pendingFiltered.length) setSelectedReturns([])
+                    else setSelectedReturns(pendingFiltered.map(a => a.id))
+                  }
+                  const handleSingleReturn = (row) => {
+                    setReturnModalRow(row)
+                    setReturnForm({ date: new Date().toISOString().slice(0,10), condition: 'Good', notes: '' })
+                  }
+                  const handleBulkReturn = () => {
+                    if (selectedReturns.length === 0) return alert('Select at least one assignment to return')
+                    if (!confirm(`Return ${selectedReturns.length} assets in bulk?`)) return
+                    const newRecords = pending
+                      .filter(a => selectedReturns.includes(a.id))
+                      .map((a, i) => ({
+                        id: `RT${4100 + returnedRecords.length + i}`,
+                        assetId: a.assetId, assetName: a.assetName, employee: a.employee,
+                        returnDate: today.split('-').reverse().join('-'),
+                        condition: 'Good', notes: 'Bulk return',
+                      }))
+                    setReturnedRecords([...newRecords, ...returnedRecords])
+                    setSelectedReturns([])
+                    alert(`✓ ${newRecords.length} assets returned successfully`)
+                  }
+                  const submitReturn = () => {
+                    const row = returnModalRow
+                    const dateParts = returnForm.date.split('-')
+                    const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+                    const newRecord = {
+                      id: `RT${4100 + returnedRecords.length}`,
+                      assetId: row.assetId, assetName: row.assetName, employee: row.employee,
+                      returnDate: formattedDate, condition: returnForm.condition, notes: returnForm.notes || '-',
+                    }
+                    setReturnedRecords([newRecord, ...returnedRecords])
+                    setSelectedReturns((prev) => prev.filter(x => x !== row.id))
+                    setReturnModalRow(null)
+                    setReturnTab('Recent')
+                  }
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Return Assets</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Return Assets
+                          </p>
+                        </div>
+                        {selectedReturns.length > 0 && (
+                          <button
+                            onClick={handleBulkReturn}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm"
+                          >
+                            <RotateCw className="w-4 h-4" />
+                            Return Selected ({selectedReturns.length})
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => {
+                          const Icon = s.icon
+                          return (
+                            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-2xl font-bold text-gray-900 mt-0.5">{s.value}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Table Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-gray-100 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            {['Pending', 'Recent'].map((t) => (
+                              <button
+                                key={t}
+                                onClick={() => { setReturnTab(t); setSelectedReturns([]) }}
+                                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-2 ${
+                                  returnTab === t
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                              >
+                                {t === 'Pending' ? 'Pending Returns' : 'Recent Returns'}
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${returnTab === t ? 'bg-white text-blue-600' : 'bg-white text-gray-700'}`}>
+                                  {t === 'Pending' ? pending.length : returnedRecords.length}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="relative w-full sm:w-72">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={returnSearch}
+                              onChange={(e) => setReturnSearch(e.target.value)}
+                              placeholder="Search..."
+                              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* PENDING TAB */}
+                        {returnTab === 'Pending' && (
+                          <div className="overflow-x-auto animate-in fade-in duration-200">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-6 py-3.5 text-left">
+                                    <input
+                                      type="checkbox"
+                                      checked={pendingFiltered.length > 0 && selectedReturns.length === pendingFiltered.length}
+                                      onChange={toggleSelectAll}
+                                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                  </th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assignment</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Department</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Due</th>
+                                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                  <th className="px-4 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {pendingFiltered.length === 0 ? (
+                                  <tr><td colSpan={9} className="px-6 py-12 text-center text-sm text-gray-500">All caught up — no pending returns</td></tr>
+                                ) : pendingFiltered.map((a) => (
+                                  <tr key={a.id} className={`hover:bg-gray-50 transition-colors ${selectedReturns.includes(a.id) ? 'bg-blue-50/50' : ''}`}>
+                                    <td className="px-6 py-4">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedReturns.includes(a.id)}
+                                        onChange={() => toggleSelect(a.id)}
+                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                      />
+                                    </td>
+                                    <td className="px-4 py-4 text-sm font-semibold text-blue-600">{a.id}</td>
+                                    <td className="px-4 py-4">
+                                      <button onClick={() => { setSelectedAssetId(a.assetId); setDetailsTab('Assignment History') }} className="text-left">
+                                        <p className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">{a.assetName}</p>
+                                        <p className="text-xs text-blue-600">{a.assetId}</p>
+                                      </button>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
+                                          {a.employee.split(' ').map(n => n[0]).join('').slice(0,2)}
+                                        </div>
+                                        <div className="leading-tight">
+                                          <p className="text-sm font-semibold text-gray-800">{a.employee}</p>
+                                          <p className="text-xs text-gray-500">{a.empId}</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-4 text-sm text-gray-700">{a.department}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-700">{a.assignedDate}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-700">{a.returnDate}</td>
+                                    <td className="px-4 py-4">
+                                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold border ${a.status === 'Overdue' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
+                                        {a.status === 'Overdue' && <AlertTriangle className="w-3 h-3" />}
+                                        {a.status}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                      <div className="flex justify-center">
+                                        <button
+                                          onClick={() => handleSingleReturn(a)}
+                                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm"
+                                        >
+                                          <RotateCw className="w-3.5 h-3.5" />
+                                          Return
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* RECENT TAB */}
+                        {returnTab === 'Recent' && (
+                          <div className="overflow-x-auto animate-in fade-in duration-200">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Return ID</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Asset</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Returned By</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Return Date</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Condition</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Notes</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {recentFiltered.length === 0 ? (
+                                  <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">No returns yet</td></tr>
+                                ) : recentFiltered.map((r) => (
+                                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 text-sm font-semibold text-blue-600">{r.id}</td>
+                                    <td className="px-6 py-4">
+                                      <button onClick={() => { setSelectedAssetId(r.assetId); setDetailsTab('Assignment History') }} className="text-left">
+                                        <p className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">{r.assetName}</p>
+                                        <p className="text-xs text-blue-600">{r.assetId}</p>
+                                      </button>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{r.employee}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{r.returnDate}</td>
+                                    <td className="px-6 py-4">
+                                      <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${conditionBadge(r.condition)}`}>
+                                        {r.condition}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title={r.notes}>{r.notes}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Return Modal */}
+                      {returnModalRow && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setReturnModalRow(null)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">Return Asset</h3>
+                              <button onClick={() => setReturnModalRow(null)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
+                                <p className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Returning</p>
+                                <p className="text-sm font-bold text-gray-900 mt-1">{returnModalRow.assetName} <span className="text-blue-600">({returnModalRow.assetId})</span></p>
+                                <p className="text-xs text-gray-600 mt-0.5">From: <span className="font-semibold">{returnModalRow.employee}</span> · {returnModalRow.department}</p>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Return Date</label>
+                                <input type="date" value={returnForm.date} onChange={(e) => setReturnForm({ ...returnForm, date: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Asset Condition</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {[
+                                    { name: 'Good', color: 'green' },
+                                    { name: 'Damaged', color: 'amber' },
+                                    { name: 'Lost', color: 'red' },
+                                  ].map((c) => {
+                                    const active = returnForm.condition === c.name
+                                    return (
+                                      <button
+                                        key={c.name}
+                                        onClick={() => setReturnForm({ ...returnForm, condition: c.name })}
+                                        className={`px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all ${
+                                          active
+                                            ? c.color === 'green' ? 'border-green-500 bg-green-50 text-green-700'
+                                              : c.color === 'amber' ? 'border-amber-500 bg-amber-50 text-amber-700'
+                                              : 'border-red-500 bg-red-50 text-red-700'
+                                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                        }`}
+                                      >
+                                        {c.name}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1.5">Notes (optional)</label>
+                                <textarea value={returnForm.notes} onChange={(e) => setReturnForm({ ...returnForm, notes: e.target.value })} rows={3} placeholder="Any observations on the returned asset..." className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 resize-none" />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setReturnModalRow(null)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">
+                                Cancel
+                              </button>
+                              <button onClick={submitReturn} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-sm">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Confirm Return
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })()
