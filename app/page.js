@@ -397,6 +397,12 @@ function App() {
   ])
   const [currentUser, setCurrentUser] = useState({ name: 'Admin User', email: 'admin@ams.com', role: 'Administrator' })
 
+  // UI state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [globalSearch, setGlobalSearch] = useState('')
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false)
+  const globalSearchRef = useRef(null)
+
   // Employees state
   const [empSearch, setEmpSearch] = useState('')
   const [empPage, setEmpPage] = useState(1)
@@ -552,6 +558,9 @@ function App() {
       }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
         setNotifDropdownOpen(false)
+      }
+      if (globalSearchRef.current && !globalSearchRef.current.contains(e.target)) {
+        setGlobalSearchOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -1071,18 +1080,20 @@ function App() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex min-h-[900px]">
           {/* Sidebar */}
-          <aside className="w-64 bg-[#0d1b4c] text-white flex-shrink-0 flex flex-col">
+          <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-[#0d1b4c] text-white flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out`}>
             {/* Logo */}
-            <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-              <div className="w-10 h-10 rounded-full border-2 border-white/80 flex items-center justify-center">
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-6'} py-5 border-b border-white/10`}>
+              <div className="w-10 h-10 rounded-full border-2 border-white/80 flex items-center justify-center flex-shrink-0">
                 <div className="w-5 h-5 border-2 border-white rotate-45"></div>
               </div>
-              <div className="leading-tight">
-                <div className="text-2xl font-bold">AMS</div>
-                <div className="text-[10px] font-semibold tracking-wider text-white/80">
-                  ASSET<br />MANAGEMENT<br />SYSTEM
+              {!sidebarCollapsed && (
+                <div className="leading-tight overflow-hidden whitespace-nowrap">
+                  <div className="text-2xl font-bold">AMS</div>
+                  <div className="text-[10px] font-semibold tracking-wider text-white/80">
+                    ASSET<br />MANAGEMENT<br />SYSTEM
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Menu */}
@@ -1094,14 +1105,15 @@ function App() {
                   <button
                     key={idx}
                     onClick={() => handleMenuClick(item.label)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    title={sidebarCollapsed ? item.label : undefined}
+                    className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-md'
-                        : 'text-white/85 hover:bg-white/10 hover:text-white hover:translate-x-1'
-                    }`}
+                        : 'text-white/85 hover:bg-white/10 hover:text-white'
+                    } ${isActive ? '' : (sidebarCollapsed ? '' : 'hover:translate-x-1')}`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span>{item.label}</span>
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {!sidebarCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
                   </button>
                 )
               })}
@@ -1109,20 +1121,223 @@ function App() {
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 flex flex-col bg-white">
+          <main className="flex-1 flex flex-col bg-white min-w-0">
             {/* Top Bar */}
             <div className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
               <div className="flex items-center gap-4 flex-1 max-w-2xl">
-                <button className="p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                <button
+                  onClick={() => setSidebarCollapsed((v) => !v)}
+                  title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  className="p-1.5 hover:bg-gray-100 rounded-md transition-colors active:scale-95"
+                >
                   <Menu className="w-5 h-5 text-gray-700" />
                 </button>
-                <div className="relative flex-1">
+                <div className="relative flex-1" ref={globalSearchRef}>
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search assets, categories, employees..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                    value={globalSearch}
+                    onChange={(e) => { setGlobalSearch(e.target.value); setGlobalSearchOpen(true) }}
+                    onFocus={() => setGlobalSearchOpen(true)}
+                    placeholder="Search assets, categories, employees, vendors..."
+                    className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                   />
+                  {globalSearch && (
+                    <button
+                      onClick={() => { setGlobalSearch(''); setGlobalSearchOpen(false) }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-lg leading-none"
+                      title="Clear"
+                    >
+                      ×
+                    </button>
+                  )}
+
+                  {/* Search dropdown */}
+                  {globalSearchOpen && (() => {
+                    const q = globalSearch.toLowerCase().trim()
+                    const categoriesList = ['Laptops', 'Monitors', 'Printers', 'Mobile Devices', 'Tablets', 'Accessories', 'Cameras', 'Software']
+                    let assetResults = []
+                    let employeeResults = []
+                    let categoryResults = []
+                    let vendorResults = []
+                    let pageResults = []
+                    if (q) {
+                      assetResults = dummyAssets.filter(a =>
+                        a.name.toLowerCase().includes(q) ||
+                        a.id.toLowerCase().includes(q) ||
+                        (a.category || '').toLowerCase().includes(q) ||
+                        (a.assignedTo || '').toLowerCase().includes(q)
+                      ).slice(0, 5)
+                      employeeResults = dummyEmployees.filter(e =>
+                        e.name.toLowerCase().includes(q) ||
+                        e.id.toLowerCase().includes(q) ||
+                        (e.email || '').toLowerCase().includes(q) ||
+                        (e.department || '').toLowerCase().includes(q)
+                      ).slice(0, 5)
+                      categoryResults = categoriesList.filter(c => c.toLowerCase().includes(q)).slice(0, 5)
+                      vendorResults = dummyVendors.filter(v =>
+                        v.name.toLowerCase().includes(q) ||
+                        (v.contact || '').toLowerCase().includes(q) ||
+                        (v.category || '').toLowerCase().includes(q)
+                      ).slice(0, 5)
+                      pageResults = sidebarItems.filter(s => s.label !== 'Logout' && s.label.toLowerCase().includes(q)).slice(0, 5)
+                    }
+                    const total = assetResults.length + employeeResults.length + categoryResults.length + vendorResults.length + pageResults.length
+                    return (
+                      <div className="absolute left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[480px] overflow-y-auto">
+                        {!q ? (
+                          <div className="p-4">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Quick navigation</div>
+                            <div className="grid grid-cols-2 gap-1">
+                              {['Dashboard', 'Assets', 'Categories', 'Employees', 'Maintenance', 'Reports'].map(p => (
+                                <button
+                                  key={p}
+                                  onClick={() => { setActiveMenu(p); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 text-left"
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                                  {p}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-100 text-[11px] text-gray-400">
+                              Start typing to search across <span className="font-semibold text-gray-600">assets, employees, vendors, categories & pages</span>.
+                            </div>
+                          </div>
+                        ) : total === 0 ? (
+                          <div className="p-8 text-center">
+                            <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                              <Search className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <p className="text-sm font-semibold text-gray-700">No results for &ldquo;{globalSearch}&rdquo;</p>
+                            <p className="text-xs text-gray-500 mt-1">Try a different keyword or check the spelling.</p>
+                          </div>
+                        ) : (
+                          <div className="py-2">
+                            {pageResults.length > 0 && (
+                              <div>
+                                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 flex items-center justify-between">
+                                  <span>Pages</span>
+                                  <span className="text-gray-500">{pageResults.length}</span>
+                                </div>
+                                {pageResults.map((p, i) => {
+                                  const PIcon = p.icon
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => { setActiveMenu(p.label); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left"
+                                    >
+                                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <PIcon className="w-4 h-4 text-blue-600" />
+                                      </div>
+                                      <span className="text-sm font-semibold text-gray-900">{p.label}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            {assetResults.length > 0 && (
+                              <div>
+                                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 flex items-center justify-between">
+                                  <span>Assets</span>
+                                  <span className="text-gray-500">{assetResults.length}</span>
+                                </div>
+                                {assetResults.map((a) => (
+                                  <button
+                                    key={a.id}
+                                    onClick={() => { setSelectedAssetId(a.id); setAssetView('details'); setActiveMenu('Assets'); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                      <Package className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-semibold text-gray-900 truncate">{a.name}</div>
+                                      <div className="text-xs text-gray-500 truncate">{a.id} · {a.category} · {a.status}</div>
+                                    </div>
+                                    <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {employeeResults.length > 0 && (
+                              <div>
+                                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 flex items-center justify-between">
+                                  <span>Employees</span>
+                                  <span className="text-gray-500">{employeeResults.length}</span>
+                                </div>
+                                {employeeResults.map((e) => (
+                                  <button
+                                    key={e.id}
+                                    onClick={() => { setActiveMenu('Employees'); setEmpSearch(e.name); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left"
+                                  >
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                      {e.name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-semibold text-gray-900 truncate">{e.name}</div>
+                                      <div className="text-xs text-gray-500 truncate">{e.id} · {e.designation || e.department}</div>
+                                    </div>
+                                    <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {vendorResults.length > 0 && (
+                              <div>
+                                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 flex items-center justify-between">
+                                  <span>Vendors</span>
+                                  <span className="text-gray-500">{vendorResults.length}</span>
+                                </div>
+                                {vendorResults.map((v) => (
+                                  <button
+                                    key={v.id}
+                                    onClick={() => { setActiveMenu('Vendors'); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                      <Truck className="w-4 h-4 text-amber-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-semibold text-gray-900 truncate">{v.name}</div>
+                                      <div className="text-xs text-gray-500 truncate">{v.id} · {v.city} · {v.category}</div>
+                                    </div>
+                                    <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {categoryResults.length > 0 && (
+                              <div>
+                                <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 flex items-center justify-between">
+                                  <span>Categories</span>
+                                  <span className="text-gray-500">{categoryResults.length}</span>
+                                </div>
+                                {categoryResults.map((c, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => { setActiveMenu('Categories'); setGlobalSearchOpen(false); setGlobalSearch('') }}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 text-left"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                      <FolderKanban className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-900 truncate">{c}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
