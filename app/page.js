@@ -66,6 +66,21 @@ import {
   Mouse,
 } from 'lucide-react'
 
+const dummyVendors = [
+  { id: 'V001', name: 'Dell India Pvt. Ltd.', contact: 'Rahul Sharma', email: 'rahul.sharma@dell.com', phone: '+91 98765 11234', city: 'Bangalore', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 4, totalSpend: 568000, rating: 5, since: 2019 },
+  { id: 'V002', name: 'HP India', contact: 'Priya Mehta', email: 'priya@hp.com', phone: '+91 98765 22345', city: 'Mumbai', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 4, totalSpend: 224500, rating: 4.5, since: 2018 },
+  { id: 'V003', name: 'Apple India', contact: 'Vikram Singh', email: 'vikram@apple.com', phone: '+91 98765 33456', city: 'Mumbai', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 3, totalSpend: 458900, rating: 5, since: 2020 },
+  { id: 'V004', name: 'Samsung India', contact: 'Anita Desai', email: 'anita@samsung.com', phone: '+91 98765 44567', city: 'Delhi', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 2, totalSpend: 138500, rating: 4, since: 2017 },
+  { id: 'V005', name: 'Lenovo India', contact: 'Karthik Nair', email: 'karthik@lenovo.com', phone: '+91 98765 55678', city: 'Bangalore', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 2, totalSpend: 213000, rating: 4.5, since: 2019 },
+  { id: 'V006', name: 'Epson India', contact: 'Sneha Patil', email: 'sneha@epson.com', phone: '+91 98765 66789', city: 'Pune', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 1, totalSpend: 42000, rating: 4, since: 2021 },
+  { id: 'V007', name: 'Brother India', contact: 'Rajesh Kumar', email: 'rajesh@brother.com', phone: '+91 98765 77890', city: 'Chennai', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 1, totalSpend: 48000, rating: 3.5, since: 2022 },
+  { id: 'V008', name: 'LG Electronics', contact: 'Pooja Reddy', email: 'pooja@lg.com', phone: '+91 98765 88901', city: 'Hyderabad', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 1, totalSpend: 48000, rating: 4, since: 2020 },
+  { id: 'V009', name: 'Microsoft Store', contact: 'Arjun Kapoor', email: 'arjun@microsoft.com', phone: '+91 98765 99012', city: 'Hyderabad', country: 'India', category: 'Software', status: 'Active', assetsCount: 1, totalSpend: 132000, rating: 5, since: 2018 },
+  { id: 'V010', name: 'Canon India', contact: 'Neha Joshi', email: 'neha@canon.com', phone: '+91 98765 01234', city: 'Mumbai', country: 'India', category: 'Hardware', status: 'Active', assetsCount: 1, totalSpend: 245000, rating: 4.5, since: 2019 },
+  { id: 'V011', name: 'Logitech India', contact: 'Sanjay Verma', email: 'sanjay@logitech.com', phone: '+91 98765 12121', city: 'Bangalore', country: 'India', category: 'Hardware', status: 'Inactive', assetsCount: 0, totalSpend: 8500, rating: 4, since: 2023 },
+  { id: 'V012', name: 'TechServ IT Services', contact: 'Manish Gupta', email: 'manish@techserv.in', phone: '+91 98765 23232', city: 'Noida', country: 'India', category: 'Services', status: 'Inactive', assetsCount: 0, totalSpend: 0, rating: 3, since: 2024 },
+]
+
 const dummyAssignments = [
   { id: 'AS5001', assetId: 'A1001', assetName: 'Dell Latitude 5440', empId: 'E1001', employee: 'John Doe', department: 'IT Department', assignedDate: '14-02-2024', returnDate: '-', status: 'Active' },
   { id: 'AS5002', assetId: 'A1003', assetName: 'Apple MacBook Pro', empId: 'E1006', employee: 'Sarah Wilson', department: 'Design Team', assignedDate: '21-01-2024', returnDate: '-', status: 'Active' },
@@ -309,6 +324,12 @@ function App() {
     { id: 'RT4002', assetId: 'A1002', assetName: 'HP LaserJet Pro', employee: 'David Lee', returnDate: '18-03-2024', condition: 'Damaged', notes: 'Paper tray cracked' },
     { id: 'RT4003', assetId: 'A1001', assetName: 'Dell Latitude 5440', employee: 'Mike Johnson', returnDate: '15-02-2024', condition: 'Good', notes: 'Returned in original condition' },
   ])
+
+  // Vendors state
+  const [vendorFilter, setVendorFilter] = useState('All')
+  const [vendorSearch, setVendorSearch] = useState('')
+  const [vendorView, setVendorView] = useState('grid')
+  const [selectedVendor, setSelectedVendor] = useState(null)
 
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
@@ -2487,6 +2508,335 @@ function App() {
                           </table>
                         </div>
                       </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Vendors' ? (
+                (() => {
+                  const filtered = dummyVendors.filter((v) => {
+                    const inFilter = vendorFilter === 'All' || v.status === vendorFilter || v.category === vendorFilter
+                    const q = vendorSearch.toLowerCase()
+                    const inSearch = !q || v.name.toLowerCase().includes(q) || v.contact.toLowerCase().includes(q) || v.email.toLowerCase().includes(q) || v.city.toLowerCase().includes(q)
+                    return inFilter && inSearch
+                  })
+                  const totalSpend = dummyVendors.reduce((s, v) => s + v.totalSpend, 0)
+                  const topVendor = [...dummyVendors].sort((a, b) => b.totalSpend - a.totalSpend)[0]
+                  const stats = [
+                    { label: 'Total Vendors', value: dummyVendors.length, icon: Truck, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Active', value: dummyVendors.filter(v => v.status === 'Active').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Total Spend', value: `₹${(totalSpend / 100000).toFixed(1)}L`, icon: Package, color: 'text-amber-500', bg: 'bg-amber-100' },
+                    { label: 'Top Vendor', value: topVendor.name.split(' ')[0], icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100', sub: `₹${topVendor.totalSpend.toLocaleString('en-IN')}` },
+                  ]
+                  const filters = ['All', 'Active', 'Inactive', 'Hardware', 'Software', 'Services']
+                  const vendorAccent = (id) => {
+                    const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-indigo-500']
+                    return colors[parseInt(id.slice(1)) % colors.length]
+                  }
+                  const Stars = ({ rating }) => {
+                    const full = Math.floor(rating)
+                    const half = rating - full >= 0.5
+                    return (
+                      <div className="flex items-center gap-0.5">
+                        {[0,1,2,3,4].map(i => (
+                          <span key={i} className={`text-xs ${i < full ? 'text-amber-400' : i === full && half ? 'text-amber-300' : 'text-gray-300'}`}>
+                            ★
+                          </span>
+                        ))}
+                        <span className="text-xs text-gray-600 ml-1 font-semibold">{rating}</span>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Vendors</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Vendors
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => alert('Add Vendor form would open here')}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Vendor
+                        </button>
+                      </div>
+
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => {
+                          const Icon = s.icon
+                          return (
+                            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                              <div className={`w-14 h-14 rounded-full ${s.bg} flex items-center justify-center`}>
+                                <Icon className={`w-7 h-7 ${s.color}`} strokeWidth={2.2} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-gray-500 font-medium">{s.label}</p>
+                                <p className="text-xl font-bold text-gray-900 mt-0.5 truncate">{s.value}</p>
+                                {s.sub && <p className="text-xs text-gray-500 mt-0.5 truncate">{s.sub}</p>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Toolbar */}
+                      <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {filters.map((f) => (
+                            <button
+                              key={f}
+                              onClick={() => setVendorFilter(f)}
+                              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                                vendorFilter === f
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {f}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input type="text" value={vendorSearch} onChange={(e) => setVendorSearch(e.target.value)} placeholder="Search vendors..." className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white" />
+                          </div>
+                          <div className="flex items-center border border-gray-200 rounded-lg p-0.5 bg-gray-50">
+                            <button onClick={() => setVendorView('grid')} className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${vendorView === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>Grid</button>
+                            <button onClick={() => setVendorView('list')} className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${vendorView === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}>List</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* GRID VIEW */}
+                      {vendorView === 'grid' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-in fade-in duration-200">
+                          {filtered.map((v) => (
+                            <div key={v.id} onClick={() => setSelectedVendor(v)} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
+                              <div className={`h-16 ${vendorAccent(v.id)} relative`}>
+                                <div className="absolute -bottom-6 left-5 w-14 h-14 rounded-xl bg-white border-4 border-white shadow-md flex items-center justify-center">
+                                  <span className={`text-xl font-bold ${vendorAccent(v.id).replace('bg-', 'text-')}`}>
+                                    {v.name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                                <span className={`absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold ${v.status === 'Active' ? 'bg-white/95 text-green-700' : 'bg-white/95 text-gray-600'}`}>
+                                  {v.status}
+                                </span>
+                              </div>
+                              <div className="pt-8 px-5 pb-5">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="text-sm font-bold text-gray-900 truncate" title={v.name}>{v.name}</h4>
+                                    <p className="text-xs text-gray-500 mt-0.5">{v.id} · {v.category}</p>
+                                  </div>
+                                  <Stars rating={v.rating} />
+                                </div>
+                                <div className="mt-4 space-y-1.5 text-xs">
+                                  <div className="flex items-center gap-2 text-gray-600">
+                                    <User className="w-3.5 h-3.5 text-gray-400" />
+                                    <span className="truncate">{v.contact}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-gray-600">
+                                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                                    <span className="truncate" title={v.email}>{v.email}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-gray-600">
+                                    <Building2 className="w-3.5 h-3.5 text-gray-400" />
+                                    <span className="truncate">{v.city}, {v.country}</span>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">Assets</p>
+                                    <p className="text-base font-bold text-gray-900">{v.assetsCount}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">Total Spend</p>
+                                    <p className="text-base font-bold text-blue-600">₹{(v.totalSpend/1000).toFixed(1)}k</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {filtered.length === 0 && (
+                            <div className="col-span-full text-center py-16">
+                              <p className="text-sm text-gray-500">No vendors match your filters</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* LIST VIEW */}
+                      {vendorView === 'list' && (
+                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden animate-in fade-in duration-200">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-gray-50 border-b border-gray-200">
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Vendor</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Assets</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Spend</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rating</th>
+                                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                  <th className="px-6 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {filtered.map((v) => (
+                                  <tr key={v.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-lg ${vendorAccent(v.id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                                          {v.name.slice(0,2).toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-sm font-semibold text-gray-800 truncate">{v.name}</p>
+                                          <p className="text-xs text-gray-500">{v.id}</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <p className="text-sm font-medium text-gray-800">{v.contact}</p>
+                                      <p className="text-xs text-gray-500">{v.email}</p>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{v.category}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-700">{v.city}</td>
+                                    <td className="px-6 py-4 text-sm font-bold text-gray-900">{v.assetsCount}</td>
+                                    <td className="px-6 py-4 text-sm font-bold text-blue-600">₹{v.totalSpend.toLocaleString('en-IN')}</td>
+                                    <td className="px-6 py-4"><Stars rating={v.rating} /></td>
+                                    <td className="px-6 py-4">
+                                      <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${v.status === 'Active' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                        {v.status}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <button onClick={() => setSelectedVendor(v)} title="View" className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => alert(`Edit ${v.name}`)} title="Edit" className="w-8 h-8 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => { if (confirm(`Delete ${v.name}?`)) alert('Deleted (demo)') }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {filtered.length === 0 && (
+                                  <tr><td colSpan={9} className="px-6 py-12 text-center text-sm text-gray-500">No vendors match your filters</td></tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Vendor Detail Modal */}
+                      {selectedVendor && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setSelectedVendor(null)}>
+                          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                            <div className={`h-24 ${vendorAccent(selectedVendor.id)} relative`}>
+                              <button onClick={() => setSelectedVendor(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center text-white">✕</button>
+                              <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center">
+                                <span className={`text-3xl font-bold ${vendorAccent(selectedVendor.id).replace('bg-', 'text-')}`}>
+                                  {selectedVendor.name.slice(0,2).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="pt-12 px-6 pb-6">
+                              <div className="flex items-start justify-between flex-wrap gap-3">
+                                <div>
+                                  <h3 className="text-xl font-bold text-gray-900">{selectedVendor.name}</h3>
+                                  <p className="text-sm text-gray-500 mt-0.5">{selectedVendor.id} · {selectedVendor.category} · Partnered since {selectedVendor.since}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Stars rating={selectedVendor.rating} />
+                                  <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${selectedVendor.status === 'Active' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                    {selectedVendor.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Contact Information</h4>
+                                  <div className="space-y-2.5 text-sm">
+                                    <div className="flex items-center gap-3"><User className="w-4 h-4 text-gray-400" /><span className="text-gray-800 font-semibold">{selectedVendor.contact}</span></div>
+                                    <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-gray-400" /><a href={`mailto:${selectedVendor.email}`} className="text-blue-600 hover:underline">{selectedVendor.email}</a></div>
+                                    <div className="flex items-center gap-3"><Smartphone className="w-4 h-4 text-gray-400" /><span className="text-gray-800">{selectedVendor.phone}</span></div>
+                                    <div className="flex items-center gap-3"><Building2 className="w-4 h-4 text-gray-400" /><span className="text-gray-800">{selectedVendor.city}, {selectedVendor.country}</span></div>
+                                  </div>
+                                </div>
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Performance</h4>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                                      <p className="text-xs text-gray-600">Assets Supplied</p>
+                                      <p className="text-xl font-bold text-blue-700 mt-1">{selectedVendor.assetsCount}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                                      <p className="text-xs text-gray-600">Total Spend</p>
+                                      <p className="text-xl font-bold text-emerald-700 mt-1">₹{selectedVendor.totalSpend.toLocaleString('en-IN')}</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                                      <p className="text-xs text-gray-600">Rating</p>
+                                      <p className="text-xl font-bold text-amber-700 mt-1">{selectedVendor.rating}/5</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-purple-50 border border-purple-100">
+                                      <p className="text-xs text-gray-600">Years</p>
+                                      <p className="text-xl font-bold text-purple-700 mt-1">{2025 - selectedVendor.since}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Assets supplied */}
+                              <div className="mt-6">
+                                <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Assets Supplied ({selectedVendor.assetsCount})</h4>
+                                {selectedVendor.assetsCount === 0 ? (
+                                  <p className="text-sm text-gray-500 italic">No assets currently supplied by this vendor.</p>
+                                ) : (
+                                  <div className="space-y-2 max-h-44 overflow-y-auto">
+                                    {dummyAssets.filter(a => a.vendor === selectedVendor.name).map(a => (
+                                      <button
+                                        key={a.id}
+                                        onClick={() => { setSelectedAssetId(a.id); setDetailsTab('Assignment History'); setSelectedVendor(null) }}
+                                        className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 transition-colors text-left"
+                                      >
+                                        <img src={a.image} alt={a.name} className="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-semibold text-gray-800 truncate">{a.name}</p>
+                                          <p className="text-xs text-gray-500">{a.id} · {a.category}</p>
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setSelectedVendor(null)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">
+                                Close
+                              </button>
+                              <button onClick={() => alert(`Edit ${selectedVendor.name}`)} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                                <Edit3 className="w-4 h-4" />
+                                Edit Vendor
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })()
