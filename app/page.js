@@ -61,6 +61,9 @@ import {
   Activity,
   Clock,
   Building2,
+  Laptop,
+  Tablet,
+  Mouse,
 } from 'lucide-react'
 
 const dummyAssets = [
@@ -74,6 +77,16 @@ const dummyAssets = [
   { id: 'A1008', name: 'Logitech MX Master 3S', category: 'Peripheral', manufacturer: 'Logitech MX Master 3S', serial: 'LGMX3S889900', model: 'MX Master 3S', purchaseDate: '2024-05-08', purchasePrice: 8500, vendor: 'Logitech India', warranty: '2026-05-08', location: 'IT Department', description: 'Wireless ergonomic mouse', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&q=80' },
   { id: 'A1009', name: 'iPad Pro 12.9"', category: 'Tablet', manufacturer: 'Apple iPad Pro', serial: 'APIPD129776', model: 'iPad Pro M2', purchaseDate: '2024-02-28', purchasePrice: 109900, vendor: 'Apple India', warranty: '2026-02-28', location: 'Marketing', description: 'iPad for content creation team', status: 'Assigned', assignedTo: 'Sophia Garcia', image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=600&q=80' },
   { id: 'A1010', name: 'Canon EOS R6 Camera', category: 'Camera', manufacturer: 'Canon EOS R6', serial: 'CNEOSR6334455', model: 'EOS R6 Mark II', purchaseDate: '2023-12-15', purchasePrice: 245000, vendor: 'Canon India', warranty: '2025-12-15', location: 'Media Room', description: 'Mirrorless camera for marketing shoots', status: 'Maintenance', assignedTo: 'Daniel Martinez', image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=600&q=80' },
+  { id: 'A1011', name: 'Dell OptiPlex 7090', category: 'Desktop', manufacturer: 'Dell OptiPlex', serial: 'DLOX7090776', model: 'OptiPlex 7090', purchaseDate: '2023-09-10', purchasePrice: 58000, vendor: 'Dell India Pvt. Ltd.', warranty: '2025-09-10', location: 'Finance', description: 'Business desktop tower', status: 'Assigned', assignedTo: 'Olivia Anderson', image: 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&q=80' },
+  { id: 'A1012', name: 'HP EliteDesk 800', category: 'Desktop', manufacturer: 'HP EliteDesk', serial: 'HPED800221', model: 'EliteDesk 800 G9', purchaseDate: '2024-01-08', purchasePrice: 62000, vendor: 'HP India', warranty: '2026-01-08', location: 'IT Department', description: 'Compact business desktop', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1547082299-de196ea013d6?w=600&q=80' },
+  { id: 'A1013', name: 'HP Pavilion 24 All-in-One', category: 'Desktop', manufacturer: 'HP Pavilion', serial: 'HPPV24558', model: 'Pavilion 24-ca0xxx', purchaseDate: '2023-07-20', purchasePrice: 72000, vendor: 'HP India', warranty: '2025-07-20', location: 'Reception', description: 'All-in-one PC with touchscreen', status: 'Assigned', assignedTo: 'Mia King', image: 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=600&q=80' },
+  { id: 'A1014', name: 'Brother MFC-L8900', category: 'Printer', manufacturer: 'Brother MFC', serial: 'BRMFC889922', model: 'MFC-L8900CDW', purchaseDate: '2023-10-25', purchasePrice: 48000, vendor: 'Brother India', warranty: '2025-10-25', location: 'HR Department', description: 'Multi-function color laser printer', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1581092334577-23bdc6e0c9ce?w=600&q=80' },
+  { id: 'A1015', name: 'LG UltraWide 34"', category: 'Monitor', manufacturer: 'LG UltraWide', serial: 'LGUW34112', model: '34WP65C-B', purchaseDate: '2024-02-10', purchasePrice: 48000, vendor: 'LG Electronics', warranty: '2026-02-10', location: 'Design Team', description: '34-inch curved ultrawide monitor', status: 'Assigned', assignedTo: 'Isabella Allen', image: 'https://images.unsplash.com/photo-1616763355548-1b606f439f86?w=600&q=80' },
+  { id: 'A1016', name: 'Dell P2422H Monitor', category: 'Monitor', manufacturer: 'Dell Professional', serial: 'DLP2422998', model: 'P2422H', purchaseDate: '2024-03-15', purchasePrice: 18500, vendor: 'Dell India Pvt. Ltd.', warranty: '2026-03-15', location: 'Sales Team', description: '24-inch professional Full HD monitor', status: 'Assigned', assignedTo: 'Charlotte Scott', image: 'https://images.unsplash.com/photo-1547119957-637f8679db1e?w=600&q=80' },
+  { id: 'A1017', name: 'Samsung Galaxy S23', category: 'Mobile Device', manufacturer: 'Samsung Galaxy', serial: 'SMGS23445', model: 'Galaxy S23 Ultra', purchaseDate: '2024-04-12', purchasePrice: 124000, vendor: 'Samsung India', warranty: '2026-04-12', location: 'Operations', description: 'Flagship company phone', status: 'Assigned', assignedTo: 'William Thomas', image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&q=80' },
+  { id: 'A1018', name: 'Microsoft Surface Pro 9', category: 'Laptop', manufacturer: 'Microsoft Surface', serial: 'MSSP9332', model: 'Surface Pro 9', purchaseDate: '2024-05-05', purchasePrice: 132000, vendor: 'Microsoft Store', warranty: '2026-05-05', location: 'Marketing', description: '2-in-1 detachable laptop', status: 'Available', assignedTo: '-', image: 'https://images.unsplash.com/photo-1542751110-97427bbecf20?w=600&q=80' },
+  { id: 'A1019', name: 'Lenovo Yoga 9i', category: 'Laptop', manufacturer: 'Lenovo Yoga', serial: 'LNYO9I223', model: 'Yoga 9i Gen 8', purchaseDate: '2024-03-28', purchasePrice: 145000, vendor: 'Lenovo India', warranty: '2026-03-28', location: 'IT Department', description: 'Premium convertible laptop', status: 'Assigned', assignedTo: 'Alexander Hill', image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&q=80' },
+  { id: 'A1020', name: 'HP ProBook 450 G10', category: 'Laptop', manufacturer: 'HP ProBook', serial: 'HPPB450789', model: 'ProBook 450 G10', purchaseDate: '2024-06-01', purchasePrice: 72500, vendor: 'HP India', warranty: '2026-06-01', location: 'Sales Team', description: 'Business laptop for sales reps', status: 'Assigned', assignedTo: 'Benjamin Hall', image: 'https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?w=600&q=80' },
 ]
 
 const assignmentHistory = {
@@ -213,6 +226,10 @@ function App() {
   // Maintenance state
   const [maintPage, setMaintPage] = useState(1)
   const MAINT_PER_PAGE = 5
+
+  // Categories state
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [catSearch, setCatSearch] = useState('')
 
   // Assets view state: 'list' | 'add' | 'details'
   const [assetView, setAssetView] = useState('list')
@@ -2164,6 +2181,178 @@ function App() {
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : activeMenu === 'Categories' ? (
+                (() => {
+                  const categoryIconMap = {
+                    'Laptop': { icon: Laptop, color: 'text-blue-600', bg: 'bg-blue-100' },
+                    'Desktop': { icon: Monitor, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                    'Monitor': { icon: Monitor, color: 'text-violet-600', bg: 'bg-violet-100' },
+                    'Printer': { icon: Printer, color: 'text-amber-600', bg: 'bg-amber-100' },
+                    'Mobile Device': { icon: Smartphone, color: 'text-pink-600', bg: 'bg-pink-100' },
+                    'Tablet': { icon: Tablet, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+                    'Camera': { icon: Camera, color: 'text-rose-600', bg: 'bg-rose-100' },
+                    'Projector': { icon: FileText, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+                    'Peripheral': { icon: Mouse, color: 'text-orange-600', bg: 'bg-orange-100' },
+                  }
+                  const counts = {}
+                  dummyAssets.forEach((a) => { counts[a.category] = (counts[a.category] || 0) + 1 })
+                  const categories = Object.entries(counts)
+                    .map(([name, count]) => ({ name, count, ...(categoryIconMap[name] || { icon: Package, color: 'text-gray-600', bg: 'bg-gray-100' }) }))
+                    .sort((a, b) => b.count - a.count)
+
+                  const filtered = dummyAssets.filter((a) => {
+                    const inCat = selectedCategory === 'All' || a.category === selectedCategory
+                    const q = catSearch.toLowerCase()
+                    const inSearch = !q || a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.serial.toLowerCase().includes(q)
+                    return inCat && inSearch
+                  })
+
+                  const statusBadgeCls = (s) =>
+                    s === 'Assigned' ? 'bg-green-100 text-green-700 border-green-200'
+                    : s === 'Available' ? 'bg-amber-100 text-amber-700 border-amber-200'
+                    : 'bg-red-100 text-red-700 border-red-200'
+
+                  return (
+                    <div className="animate-in fade-in duration-300 space-y-6">
+                      <div className="flex items-start justify-between flex-wrap gap-3">
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Dashboard <span className="mx-1">/</span> Categories
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => alert('Add Category form would open here')}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Category
+                        </button>
+                      </div>
+
+                      {/* Category Cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <button
+                          onClick={() => setSelectedCategory('All')}
+                          className={`p-5 rounded-xl border-2 text-left transition-all hover:shadow-md hover:-translate-y-0.5 transform ${
+                            selectedCategory === 'All'
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 bg-white hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mb-3">
+                            <Boxes className="w-6 h-6 text-white" />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">All Categories</p>
+                          <p className="text-2xl font-bold text-gray-900 mt-1">{dummyAssets.length}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Total Assets</p>
+                        </button>
+
+                        {categories.map((c) => {
+                          const Icon = c.icon
+                          const isActive = selectedCategory === c.name
+                          return (
+                            <button
+                              key={c.name}
+                              onClick={() => setSelectedCategory(c.name)}
+                              className={`p-5 rounded-xl border-2 text-left transition-all hover:shadow-md hover:-translate-y-0.5 transform ${
+                                isActive
+                                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                                  : 'border-gray-200 bg-white hover:border-blue-300'
+                              }`}
+                            >
+                              <div className={`w-12 h-12 rounded-full ${c.bg} flex items-center justify-center mb-3`}>
+                                <Icon className={`w-6 h-6 ${c.color}`} />
+                              </div>
+                              <p className="text-sm font-semibold text-gray-900">{c.name}</p>
+                              <p className="text-2xl font-bold text-gray-900 mt-1">{c.count}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{c.count === 1 ? 'asset' : 'assets'}</p>
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Asset Grid */}
+                      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-wrap gap-3">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-bold text-gray-900">
+                              {selectedCategory === 'All' ? 'All Assets' : `${selectedCategory}s`}
+                            </h3>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                              {filtered.length}
+                            </span>
+                          </div>
+                          <div className="relative w-full max-w-xs">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={catSearch}
+                              onChange={(e) => setCatSearch(e.target.value)}
+                              placeholder="Search assets..."
+                              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {filtered.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                              <Package className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <p className="text-sm font-semibold text-gray-700">No assets found</p>
+                            <p className="text-xs text-gray-500 mt-1">Try changing the category or search query</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-6">
+                            {filtered.map((a) => {
+                              const meta = categoryIconMap[a.category] || { icon: Package, color: 'text-gray-600', bg: 'bg-gray-100' }
+                              const Icon = meta.icon
+                              return (
+                                <div
+                                  key={a.id}
+                                  className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group bg-white"
+                                  onClick={() => alert(`Asset details for ${a.id} - ${a.name}`)}
+                                >
+                                  <div className="aspect-[4/3] bg-gray-50 flex items-center justify-center overflow-hidden">
+                                    <img
+                                      src={a.image}
+                                      alt={a.name}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  </div>
+                                  <div className="p-4">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${meta.bg} ${meta.color}`}>
+                                        <Icon className="w-3 h-3" />
+                                        {a.category}
+                                      </div>
+                                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadgeCls(a.status)}`}>
+                                        {a.status}
+                                      </span>
+                                    </div>
+                                    <h4 className="text-sm font-bold text-gray-900 line-clamp-1" title={a.name}>{a.name}</h4>
+                                    <p className="text-xs font-semibold text-blue-600 mt-0.5">{a.id}</p>
+                                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-gray-500">Location</span>
+                                        <span className="text-gray-800 font-medium truncate ml-2 max-w-[60%] text-right">{a.location}</span>
+                                      </div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-gray-500">Assigned</span>
+                                        <span className="text-gray-800 font-medium truncate ml-2 max-w-[60%] text-right">{a.assignedTo}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
