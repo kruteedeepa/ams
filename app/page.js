@@ -10,7 +10,7 @@ import {
   UserCheck,
   RotateCcw,
   Wrench,
-  QrCode,
+
   FileBarChart,
   Bell,
   Settings,
@@ -36,11 +36,12 @@ import {
   Package,
   FileText,
   Droplet,
-  Printer,
   RotateCw,
   Check,
   Edit3,
+  QrCode,
   QrCode as QrIcon,
+  Printer,
   Printer as PrintIcon,
   ArrowLeft,
   Eye,
@@ -417,6 +418,12 @@ function App() {
   // Maintenance state
   const [maintPage, setMaintPage] = useState(1)
   const MAINT_PER_PAGE = 5
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false)
+  const [maintForm, setMaintForm] = useState({ asset_id: '', technician_name: '', issue_description: '', remarks: '', cost: '' })
+  const [maintFormError, setMaintFormError] = useState('')
+  const [maintFormSuccess, setMaintFormSuccess] = useState('')
+  const [maintFormLoading, setMaintFormLoading] = useState(false)
+  const [maintenanceRecords, setMaintenanceRecords] = useState(dummyMaintenance)
 
   // Categories state
   const [selectedCategory, setSelectedCategory] = useState('All')
@@ -441,6 +448,76 @@ function App() {
     { id: 'RT4002', assetId: 'A1002', assetName: 'HP LaserJet Pro', employee: 'David Lee', returnDate: '18-03-2024', condition: 'Damaged', notes: 'Paper tray cracked' },
     { id: 'RT4003', assetId: 'A1001', assetName: 'Dell Latitude 5440', employee: 'Mike Johnson', returnDate: '15-02-2024', condition: 'Good', notes: 'Returned in original condition' },
   ])
+
+  // Live data state (shared across modules)
+  const [assets, setAssets] = useState(dummyAssets)
+  const [employees, setEmployees] = useState(dummyEmployees)
+  const [vendors, setVendors] = useState(dummyVendors)
+  const [assignments, setAssignments] = useState(dummyAssignments)
+
+  // Fetch assets and employees from MongoDB
+  useEffect(() => {
+    fetch('/api/assets')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setAssets(data) })
+      .catch(err => console.error('Assets fetch error:', err))
+
+    fetch('/api/auth')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setEmployees(data) })
+      .catch(err => console.error('Users fetch error:', err))
+    
+     fetch('/api/vendors')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setVendors(data) })
+      .catch(err => console.error('Vendors fetch error:', err))  
+  }, [])
+  // Save to MongoDB helper
+  const saveToDb = async (collection, data) => {
+    try {
+      await fetch(`/api/${collection}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (err) {
+      console.error(`Save to ${collection} failed:`, err)
+    }
+  }
+  const updateInDb = async (collection, id, data) => {
+    try {
+      await fetch(`/api/${collection}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+    } catch (err) {
+      console.error(`Update in ${collection} failed:`, err)
+    }
+  }
+  const deleteFromDb = async (collection, id) => {
+    try {
+      await fetch(`/api/${collection}/${id}`, { method: 'DELETE' })
+    } catch (err) {
+      console.error(`Delete from ${collection} failed:`, err)
+    }
+  }
+
+  // Add/Edit modal state
+  const [showEmpModal, setShowEmpModal] = useState(false)
+  const [editEmpTarget, setEditEmpTarget] = useState(null)
+  const [empForm, setEmpForm] = useState({ name: '', department: '', designation: '', email: '', phone: '' })
+  const [empFormError, setEmpFormError] = useState('')
+
+  const [showVendorModal, setShowVendorModal] = useState(false)
+  const [editVendorTarget, setEditVendorTarget] = useState(null)
+  const [vendorForm, setVendorForm] = useState({ name: '', contact: '', email: '', phone: '', city: '', country: 'India', category: 'Hardware', status: 'Active' })
+  const [vendorFormError, setVendorFormError] = useState('')
+
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [catForm, setCatForm] = useState({ name: '' })
+  const [catFormError, setCatFormError] = useState('')
+  const [customCategories, setCustomCategories] = useState([])
 
   // Vendors state
   const [vendorFilter, setVendorFilter] = useState('All')
@@ -481,11 +558,20 @@ function App() {
   const [assetView, setAssetView] = useState('list')
   const [selectedAssetId, setSelectedAssetId] = useState(null)
   const [detailsTab, setDetailsTab] = useState('Assignment History')
-
+    // QR Code Generator Modal
+  const [qrModalAsset, setQrModalAsset] = useState(null)
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState(null)
   // QR Scanner state: 'idle' | 'scanning' | 'scanned'
   const [qrState, setQrState] = useState('idle')
   const [scannedAssetIdx, setScannedAssetIdx] = useState(0)
   const qrTimerRef = useRef(null)
+  // QR real camera + upload state
+  const [qrTab, setQrTab] = useState('camera')
+  const [qrPreview, setQrPreview] = useState(null)
+  const [qrError, setQrError] = useState(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const qrVideoRef = useRef(null)
+  const qrReaderRef = useRef(null)
 
   // Settings state
   const [settingsTab, setSettingsTab] = useState('General Settings')
@@ -516,7 +602,86 @@ function App() {
     weeklyReport: false,
   })
   const [savedToast, setSavedToast] = useState(false)
+    const startRealCamera = async () => {
+    try {
+      const { BrowserQRCodeReader } = await import('@zxing/browser')
+      const codeReader = new BrowserQRCodeReader()
+      qrReaderRef.current = codeReader
+      setQrState('scanning')
+      setQrError(null)
+      const devices = await BrowserQRCodeReader.listVideoInputDevices()
+      const deviceId = devices[0]?.deviceId
+      codeReader.decodeFromVideoDevice(deviceId, qrVideoRef.current, (result, err) => {
+        if (result) {
+          const found = dummyAssets.find(a => result.getText().includes(a.id))
+          if (found) {
+            setScannedAssetIdx(dummyAssets.indexOf(found))
+          } else {
+            setScannedAssetIdx(0)
+          }
+          stopRealCamera()
+          setQrState('scanned')
+        }
+      })
+    } catch (e) {
+      setQrError('❌ Could not access camera. Try uploading an image instead.')
+      setQrState('idle')
+    }
+  }
 
+  const stopRealCamera = () => {
+    try {
+      if (qrVideoRef.current && qrVideoRef.current.srcObject) {
+        qrVideoRef.current.srcObject.getTracks().forEach(t => t.stop())
+        qrVideoRef.current.srcObject = null
+      }
+    } catch (e) {}
+    if (qrReaderRef.current) {
+      qrReaderRef.current = null
+    }
+    setQrState('idle')
+  }
+
+  const handleQrImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setQrLoading(true)
+    setQrError(null)
+    const reader = new FileReader()
+    reader.onload = () => setQrPreview(reader.result)
+    reader.readAsDataURL(file)
+    const img = new Image()
+    img.onload = async () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height)
+      const jsQR = (await import('jsqr')).default
+      const code = jsQR(imageData.data, imageData.width, imageData.height)
+      if (code) {
+        const found = dummyAssets.find(a => code.data.includes(a.id))
+        setScannedAssetIdx(found ? dummyAssets.indexOf(found) : 0)
+        setQrState('scanned')
+      } else {
+        setQrError('❌ No QR code found. Try a clearer image.')
+      }
+      setQrLoading(false)
+    }
+    img.src = URL.createObjectURL(file)
+  }
+  const generateQRCode = async (asset) => {
+    const QRCode = (await import('qrcode')).default
+    // QR contains asset info as text
+    const qrText = `ASSET:${asset.id}|NAME:${asset.name}|SERIAL:${asset.serial}|STATUS:${asset.status}`
+    const dataUrl = await QRCode.toDataURL(qrText, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#1E3A5F', light: '#ffffff' },
+    })
+    setQrCodeDataUrl(dataUrl)
+    setQrModalAsset(asset)
+  }
   const startScan = () => {
     setQrState('scanning')
     qrTimerRef.current = setTimeout(() => {
@@ -569,7 +734,14 @@ function App() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    if (name === 'purchaseDate' && value) {
+      const purchase = new Date(value)
+      purchase.setFullYear(purchase.getFullYear() + 2)
+      const warranty = purchase.toISOString().split('T')[0]
+      setForm((prev) => ({ ...prev, purchaseDate: value, warrantyExpiry: warranty }))
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleFile = (file) => {
@@ -592,16 +764,62 @@ function App() {
     setDragActive(false)
     handleFile(e.dataTransfer.files?.[0])
   }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Validate required fields
     if (!form.assetName || !form.category || !form.serialNumber || !form.purchaseDate) {
       alert('Please fill in all required fields')
       return
     }
-    console.log('Asset Saved:', { ...form, image })
-    alert('Asset added successfully!')
+
+    try {
+      // Map form fields to what the backend model expects
+      const assetData = {
+        Asset_Name:    form.assetName,
+        Asset_Type:    form.category,
+        Serial_No:     form.serialNumber,
+        Purchase_Date: form.purchaseDate,
+        Warranty:      form.warrantyExpiry || form.purchaseDate,
+        Status:        'Available',
+      }
+
+      const res = await fetch('/api/assets', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(assetData),
+      })
+
+      const json = await res.json()
+
+      if (res.ok) {
+        const newAsset = {
+          id:            json.data?._id || json._id || Date.now().toString(),
+          name:          form.assetName,
+          category:      form.category,
+          serial:        form.serialNumber,
+          model:         form.modelNumber || '',
+          purchaseDate:  form.purchaseDate,
+          purchasePrice: Number(form.purchasePrice) || 0,
+          vendor:        form.vendor || '',
+          warranty:      form.warrantyExpiry,
+          location:      form.location || '',
+          description:   form.description || '',
+          status:        'Available',
+          assignedTo:    '-',
+          image:         '',
+        }
+        setAssets(prev => [...prev, newAsset])
+        alert(`✅ Asset "${form.assetName}" saved to MongoDB!`)
+        handleCancel()
+      } else {
+        alert(`❌ Failed: ${json.error || json.message || 'Unknown error'}`)
+      }
+    } catch (err) {
+      alert('❌ Could not reach backend. Make sure the server is running on port 5000.')
+    }
   }
+  
 
   const handleCancel = () => {
     setForm({
@@ -1568,7 +1786,7 @@ function App() {
                             <PrintIcon className="w-4 h-4" />
                             Print
                           </button>
-                          <button onClick={() => alert(`QR Code generated for ${asset.id}`)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
+                          <button onClick={() => generateQRCode(asset)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm">
                             <QrIcon className="w-4 h-4" />
                             Generate QR
                           </button>
@@ -1783,12 +2001,9 @@ function App() {
                                 className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
                               >
                                 <option value="" disabled>Select category</option>
-                                <option value="laptop">Laptop</option>
-                                <option value="desktop">Desktop</option>
-                                <option value="monitor">Monitor</option>
-                                <option value="printer">Printer</option>
-                                <option value="furniture">Furniture</option>
-                                <option value="mobile">Mobile Device</option>
+                                {['Laptop','Desktop','Monitor','Printer','Mobile Device','Tablet','Camera','Projector','Peripheral',...customCategories].map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
                               </select>
                               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                             </div>
@@ -1834,6 +2049,7 @@ function App() {
                               name="purchaseDate"
                               value={form.purchaseDate}
                               onChange={handleChange}
+                              min={new Date().toISOString().split('T')[0]}
                               className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-600"
                             />
                           </div>
@@ -1880,14 +2096,19 @@ function App() {
                           <div>
                             <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                               Warranty Expiry
+                              <span className="ml-2 text-xs font-normal text-blue-500">(auto: 2 yrs from purchase)</span>
                             </label>
                             <input
                               type="date"
                               name="warrantyExpiry"
                               value={form.warrantyExpiry}
                               onChange={handleChange}
-                              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-600"
+                              min={form.purchaseDate || new Date().toISOString().split('T')[0]}
+                              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-600 bg-blue-50"
                             />
+                            {form.warrantyExpiry && (
+                              <p className="text-xs text-gray-400 mt-1">Auto-set to 2 years · You can adjust if needed</p>
+                            )}
                           </div>
 
                           {/* Location */}
@@ -1988,7 +2209,7 @@ function App() {
                 </>
               ) : activeMenu === 'Employees' ? (
                 (() => {
-                  const filtered = dummyEmployees.filter((e) => {
+                  const filtered = employees.filter((e) => {
                     const q = empSearch.toLowerCase()
                     return (
                       e.id.toLowerCase().includes(q) ||
@@ -2018,7 +2239,7 @@ function App() {
                         </div>
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => alert('Add Employee form would open here')}
+                            onClick={() => { setEditEmpTarget(null); setEmpForm({ name: '', department: '', designation: '', email: '', phone: '' }); setEmpFormError(''); setShowEmpModal(true) }}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
                           >
                             <Plus className="w-4 h-4" />
@@ -2083,23 +2304,21 @@ function App() {
                                     <td className="px-6 py-4">
                                       <div className="flex items-center justify-center gap-2">
                                         <button
-                                          onClick={() => alert(`Edit ${emp.name}`)}
+                                          onClick={() => { setEditEmpTarget(emp); setEmpForm({ name: emp.name, department: emp.department, designation: emp.designation, email: emp.email, phone: emp.phone }); setEmpFormError(''); setShowEmpModal(true) }}
                                           title="Edit"
                                           className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                         >
                                           <Pencil className="w-4 h-4" />
                                         </button>
                                         <button
-                                          onClick={() => alert(`Assign asset to ${emp.name}`)}
+                                          onClick={() => { setActiveMenu('Asset Assignment'); setShowAssignModal(true); setNewAssign(prev => ({ ...prev, empId: emp.id })) }}
                                           title="Assign"
                                           className="w-8 h-8 rounded-md bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                         >
                                           <UserPlus className="w-4 h-4" />
                                         </button>
                                         <button
-                                          onClick={() => {
-                                            if (confirm(`Delete ${emp.name}?`)) alert('Deleted (demo)')
-                                          }}
+                                          onClick={() => { if (confirm(`Delete ${emp.name}?`)) setEmployees(prev => prev.filter(e => e.id !== emp.id)) }}
                                           title="Delete"
                                           className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                         >
@@ -2150,6 +2369,69 @@ function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Employee Add/Edit Modal */}
+                      {showEmpModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowEmpModal(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">{editEmpTarget ? 'Edit Employee' : 'Add New Employee'}</h3>
+                              <button onClick={() => setShowEmpModal(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              {empFormError && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{empFormError}</div>}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+                                  <input type="text" placeholder="e.g. John Doe" value={empForm.name} onChange={(e) => setEmpForm(p => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Department <span className="text-red-500">*</span></label>
+                                  <select value={empForm.department} onChange={(e) => setEmpForm(p => ({ ...p, department: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="">Select department</option>
+                                    {['IT Department','HR Department','Finance','Operations','Marketing','Sales','Design Team','Audit','Reception'].map(d => <option key={d}>{d}</option>)}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Designation <span className="text-red-500">*</span></label>
+                                  <input type="text" placeholder="e.g. Software Engineer" value={empForm.designation} onChange={(e) => setEmpForm(p => ({ ...p, designation: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                                  <input type="email" placeholder="john@company.com" value={empForm.email} onChange={(e) => setEmpForm(p => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                                  <input type="text" placeholder="9876543210" value={empForm.phone} onChange={(e) => setEmpForm(p => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setShowEmpModal(false)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">Cancel</button>
+                              <button
+                                onClick={async () => {
+                                  if (!empForm.name.trim() || !empForm.department || !empForm.designation.trim() || !empForm.email.trim()) {
+                                    setEmpFormError('Please fill in all required fields.')
+                                    return
+                                  }
+                                  if (editEmpTarget) {
+                                    setEmployees(prev => prev.map(e => e.id === editEmpTarget.id ? { ...e, ...empForm } : e))
+                                  } else {
+                                    const nums = employees.map(e => parseInt((e.id || '').slice(1))).filter(n => !isNaN(n))
+                                    const nextId = 'E' + String((nums.length ? Math.max(...nums) : 1000) + 1).padStart(4, '0')
+                                    setEmployees(prev => [...prev, { id: nextId, ...empForm }])
+                                    await saveToDb('users', { id: nextId, ...empForm })
+                                  }
+                                  setShowEmpModal(false)
+                                }}
+                                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                              >
+                                {editEmpTarget ? 'Save Changes' : 'Add Employee'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )
                 })()
@@ -2340,12 +2622,12 @@ function App() {
                 })()
               ) : activeMenu === 'Maintenance' ? (
                 (() => {
-                  const totalPages = Math.max(1, Math.ceil(dummyMaintenance.length / MAINT_PER_PAGE))
+                  const totalPages = Math.max(1, Math.ceil(maintenanceRecords.length / MAINT_PER_PAGE))
                   const currentPage = Math.min(maintPage, totalPages)
                   const startIdx = (currentPage - 1) * MAINT_PER_PAGE
-                  const pageRows = dummyMaintenance.slice(startIdx, startIdx + MAINT_PER_PAGE)
+                  const pageRows = maintenanceRecords.slice(startIdx, startIdx + MAINT_PER_PAGE)
                   const showFrom = startIdx + 1
-                  const showTo = Math.min(startIdx + MAINT_PER_PAGE, dummyMaintenance.length)
+                  const showTo = Math.min(startIdx + MAINT_PER_PAGE, maintenanceRecords.length)
 
                   const statusBadge = (status) => {
                     if (status === 'Completed')
@@ -2371,7 +2653,7 @@ function App() {
                           </p>
                         </div>
                         <button
-                          onClick={() => alert('Add Maintenance form would open here')}
+                          onClick={() => { setMaintForm({ asset_id: '', technician_name: '', issue_description: '', remarks: '', cost: '' }); setMaintFormError(''); setMaintFormSuccess(''); setShowMaintenanceModal(true); }}
                           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
                         >
                           <Plus className="w-4 h-4" />
@@ -2412,23 +2694,21 @@ function App() {
                                   <td className="px-6 py-4">
                                     <div className="flex items-center justify-center gap-2">
                                       <button
-                                        onClick={() => alert(`Edit ${m.id}`)}
+                                        onClick={() => { setMaintForm({ asset_id: m.assetId, technician_name: '', issue_description: m.type, remarks: '', cost: '' }); setMaintFormError(''); setMaintFormSuccess(''); setShowMaintenanceModal(true); }}
                                         title="Edit"
                                         className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                       >
                                         <Pencil className="w-4 h-4" />
                                       </button>
                                       <button
-                                        onClick={() => alert(`Mark ${m.id} as completed`)}
+                                        onClick={() => { setMaintenanceRecords((prev) => prev.map((r) => r.id === m.id ? { ...r, status: 'Completed' } : r)) }}
                                         title="Mark Complete"
                                         className="w-8 h-8 rounded-md bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                       >
                                         <Check className="w-4 h-4" />
                                       </button>
                                       <button
-                                        onClick={() => {
-                                          if (confirm(`Delete ${m.id}?`)) alert('Deleted (demo)')
-                                        }}
+                                        onClick={() => { if (confirm(`Delete ${m.id}?`)) setMaintenanceRecords((prev) => prev.filter((r) => r.id !== m.id)) }}
                                         title="Delete"
                                         className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
                                       >
@@ -2445,7 +2725,7 @@ function App() {
                         {/* Pagination */}
                         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-wrap gap-3">
                           <p className="text-sm text-gray-600">
-                            Showing {showFrom} to {showTo} of {dummyMaintenance.length} entries
+                            Showing {showFrom} to {showTo} of {maintenanceRecords.length} entries
                           </p>
                           <div className="flex items-center gap-2">
                             <button
@@ -2478,6 +2758,153 @@ function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Maintenance Modal */}
+                      {showMaintenanceModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowMaintenanceModal(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">Schedule Maintenance</h3>
+                              <button onClick={() => setShowMaintenanceModal(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="px-6 py-5 space-y-4">
+                              {maintFormError && (
+                                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{maintFormError}</div>
+                              )}
+                              {maintFormSuccess && (
+                                <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">{maintFormSuccess}</div>
+                              )}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Asset ID <span className="text-red-500">*</span></label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. A1004"
+                                  value={maintForm.asset_id}
+                                  onChange={(e) => setMaintForm((p) => ({ ...p, asset_id: e.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Technician Name <span className="text-red-500">*</span></label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. IT Helpdesk"
+                                  value={maintForm.technician_name}
+                                  onChange={(e) => setMaintForm((p) => ({ ...p, technician_name: e.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Issue Description <span className="text-red-500">*</span></label>
+                                <textarea
+                                  rows={3}
+                                  placeholder="Describe the issue..."
+                                  value={maintForm.issue_description}
+                                  onChange={(e) => setMaintForm((p) => ({ ...p, issue_description: e.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Remarks</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Optional notes"
+                                    value={maintForm.remarks}
+                                    onChange={(e) => setMaintForm((p) => ({ ...p, remarks: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Estimated Cost (₹)</label>
+                                  <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={maintForm.cost}
+                                    onChange={(e) => setMaintForm((p) => ({ ...p, cost: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+                              <button
+                                onClick={() => setShowMaintenanceModal(false)}
+                                className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                disabled={maintFormLoading}
+                                onClick={async () => {
+                                  if (!maintForm.asset_id || !maintForm.technician_name || !maintForm.issue_description) {
+                                    setMaintFormError('Please fill in all required fields.')
+                                    return
+                                  }
+                                  setMaintFormError('')
+                                  setMaintFormLoading(true)
+                                  try {
+                                    const res = await fetch(`/api/maintenance`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        asset_id: maintForm.asset_id,
+                                        technician_name: maintForm.technician_name,
+                                        issue_description: maintForm.issue_description,
+                                        remarks: maintForm.remarks,
+                                        cost: maintForm.cost ? Number(maintForm.cost) : 0,
+                                      }),
+                                    })
+                                    const json = await res.json()
+                                    if (res.ok) {
+                                      const today = new Date().toISOString().split('T')[0]
+                                      const nextDue = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                                      setMaintenanceRecords((prev) => [
+                                        {
+                                          id: json.log?._id || `M${Date.now()}`,
+                                          assetId: maintForm.asset_id,
+                                          assetName: maintForm.asset_id,
+                                          type: maintForm.issue_description,
+                                          serviceDate: today,
+                                          nextDue,
+                                          status: 'In Progress',
+                                        },
+                                        ...prev,
+                                      ])
+                                      setMaintFormSuccess('✅ Maintenance logged successfully!')
+                                      setTimeout(() => setShowMaintenanceModal(false), 1500)
+                                    } else {
+                                      setMaintFormError(json.message || 'Failed to log maintenance.')
+                                    }
+                                  } catch (err) {
+                                    const today = new Date().toISOString().split('T')[0]
+                                    const nextDue = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                                    setMaintenanceRecords((prev) => [
+                                      {
+                                        id: `M${Date.now()}`,
+                                        assetId: maintForm.asset_id,
+                                        assetName: maintForm.asset_id,
+                                        type: maintForm.issue_description,
+                                        serviceDate: today,
+                                        nextDue,
+                                        status: 'In Progress',
+                                      },
+                                      ...prev,
+                                    ])
+                                    setMaintFormSuccess('✅ Maintenance saved locally (backend offline).')
+                                    setTimeout(() => setShowMaintenanceModal(false), 1500)
+                                  } finally {
+                                    setMaintFormLoading(false)
+                                  }
+                                }}
+                                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 transition-colors shadow-sm"
+                              >
+                                {maintFormLoading ? 'Saving...' : 'Save Maintenance'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )
                 })()
@@ -2497,71 +2924,109 @@ function App() {
                       <div className="bg-white border border-gray-200 rounded-xl p-6">
                         <h3 className="text-center text-lg font-bold text-gray-900 mb-5">Scan Asset QR Code</h3>
 
-                        <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-gray-900">
-                          {/* Background: blurred scene */}
-                          <div
-                            className="absolute inset-0 bg-cover bg-center"
-                            style={{
-                              backgroundImage:
-                                "url('https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=60')",
-                              filter: 'blur(10px) brightness(0.45)',
-                              transform: 'scale(1.1)',
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
-
-                          {/* Corner brackets */}
-                          {qrState !== 'idle' && (
-                            <>
-                              <span className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-green-400 rounded-tl-md" />
-                              <span className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-green-400 rounded-tr-md" />
-                              <span className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-green-400 rounded-bl-md" />
-                              <span className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-green-400 rounded-br-md" />
-                              {/* Animated scan line */}
-                              <div className="absolute inset-x-10 top-6 bottom-6 overflow-hidden pointer-events-none">
-                                <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_20px_2px_rgba(74,222,128,0.7)] animate-scan-line" />
-                              </div>
-                            </>
-                          )}
-
-                          {/* Idle state center */}
-                          {qrState === 'idle' && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/80">
-                              <Camera className="w-14 h-14 mb-3 text-white/70" />
-                              <p className="text-sm font-medium">Camera is off</p>
-                              <p className="text-xs text-white/60 mt-1">Click "Start Camera" to scan</p>
-                            </div>
-                          )}
-
-                          {/* Scanning state center */}
-                          {qrState === 'scanning' && (
-                            <div className="absolute inset-x-0 bottom-24 flex flex-col items-center text-green-300">
-                              <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm text-xs font-semibold border border-green-400/50">
-                                Scanning...
-                              </div>
-                            </div>
-                          )}
+                        {/* Tabs */}
+                        <div className="flex border-b-2 border-gray-200 mb-4">
+                          <button
+                            onClick={() => { setQrTab('camera'); setQrError(null); setQrPreview(null); }}
+                            className={`flex-1 py-2 text-sm font-bold ${qrTab === 'camera' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600'} rounded-tl-lg`}
+                          >
+                            <Camera className="w-4 h-4 inline mr-1" /> Live Camera
+                          </button>
+                          <button
+                            onClick={() => { setQrTab('upload'); setQrError(null); stopScan(); }}
+                            className={`flex-1 py-2 text-sm font-bold ${qrTab === 'upload' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-600'} rounded-tr-lg`}
+                          >
+                            <UploadCloud className="w-4 h-4 inline mr-1" /> Upload Image
+                          </button>
                         </div>
 
-                        <div className="flex justify-center mt-5">
-                          {qrState === 'idle' ? (
-                            <button
-                              onClick={startScan}
-                              className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
-                            >
-                              <Camera className="w-4 h-4" />
-                              Start Camera
-                            </button>
-                          ) : (
-                            <button
-                              onClick={stopScan}
-                              className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
-                            >
-                              <Camera className="w-4 h-4" />
-                              Stop Camera
-                            </button>
-                          )}
-                        </div>
+                        {/* Camera Tab */}
+                        {qrTab === 'camera' && (
+                          <div>
+                            <div className="relative aspect-[4/5] w-full rounded-xl overflow-hidden bg-gray-900">
+                              <video
+                                ref={qrVideoRef}
+                                className="absolute inset-0 w-full h-full object-cover"
+                              />
+                              {qrState === 'idle' && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-white/80">
+                                  <Camera className="w-14 h-14 mb-3 text-white/70" />
+                                  <p className="text-sm font-medium">Camera is off</p>
+                                  <p className="text-xs text-white/60 mt-1">Click "Start Camera" to scan</p>
+                                </div>
+                              )}
+                              {qrState === 'scanning' && (
+                                <>
+                                  <span className="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-green-400 rounded-tl-md" />
+                                  <span className="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-green-400 rounded-tr-md" />
+                                  <span className="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-green-400 rounded-bl-md" />
+                                  <span className="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-green-400 rounded-br-md" />
+                                  <div className="absolute inset-x-0 bottom-6 flex justify-center">
+                                    <span className="px-3 py-1 rounded-full bg-black/40 text-green-300 text-xs font-semibold border border-green-400/50">
+                                      Scanning...
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex justify-center mt-4">
+                              {qrState === 'idle' ? (
+                                <button
+                                  onClick={startRealCamera}
+                                  className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                                >
+                                  <Camera className="w-4 h-4" /> Start Camera
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={stopRealCamera}
+                                  className="flex items-center gap-2 px-7 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+                                >
+                                  <Camera className="w-4 h-4" /> Stop Camera
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload Tab */}
+                        {qrTab === 'upload' && (
+                          <div>
+                            <label className="block border-2 border-dashed border-blue-300 rounded-xl p-8 cursor-pointer bg-blue-50 text-center hover:bg-blue-100 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleQrImageUpload}
+                                className="hidden"
+                              />
+                              {qrPreview ? (
+                                <img src={qrPreview} alt="QR Preview" className="w-full rounded-lg max-h-64 object-contain mx-auto" />
+                              ) : (
+                                <>
+                                  <UploadCloud className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                                  <p className="font-bold text-gray-700">Click to upload QR code image</p>
+                                  <p className="text-xs text-gray-400 mt-1">Supports JPG, PNG, WEBP</p>
+                                </>
+                              )}
+                            </label>
+                            {qrLoading && (
+                              <p className="text-center text-blue-600 text-sm mt-3">🔍 Reading QR code...</p>
+                            )}
+                            {qrPreview && (
+                              <button
+                                onClick={() => { setQrPreview(null); setQrError(null); }}
+                                className="mt-3 w-full py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50"
+                              >
+                                🔄 Upload Different Image
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Error */}
+                        {qrError && (
+                          <p className="text-red-500 text-sm text-center mt-3">{qrError}</p>
+                        )}
                       </div>
 
                       {/* How It Works */}
@@ -3855,24 +4320,24 @@ function App() {
                 })()
               ) : activeMenu === 'Vendors' ? (
                 (() => {
-                  const filtered = dummyVendors.filter((v) => {
+                  const filtered = vendors.filter((v) => {
                     const inFilter = vendorFilter === 'All' || v.status === vendorFilter || v.category === vendorFilter
                     const q = vendorSearch.toLowerCase()
                     const inSearch = !q || v.name.toLowerCase().includes(q) || v.contact.toLowerCase().includes(q) || v.email.toLowerCase().includes(q) || v.city.toLowerCase().includes(q)
                     return inFilter && inSearch
                   })
-                  const totalSpend = dummyVendors.reduce((s, v) => s + v.totalSpend, 0)
-                  const topVendor = [...dummyVendors].sort((a, b) => b.totalSpend - a.totalSpend)[0]
+                  const totalSpend = vendors.reduce((s, v) => s + v.totalSpend, 0)
+                  const topVendor = vendors.length ? [...vendors].sort((a, b) => b.totalSpend - a.totalSpend)[0] : { name: 'N/A', totalSpend: 0 }
                   const stats = [
-                    { label: 'Total Vendors', value: dummyVendors.length, icon: Truck, color: 'text-blue-500', bg: 'bg-blue-100' },
-                    { label: 'Active', value: dummyVendors.filter(v => v.status === 'Active').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Total Vendors', value: vendors.length, icon: Truck, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Active', value: vendors.filter(v => v.status === 'Active').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100' },
                     { label: 'Total Spend', value: `₹${(totalSpend / 100000).toFixed(1)}L`, icon: Package, color: 'text-amber-500', bg: 'bg-amber-100' },
                     { label: 'Top Vendor', value: topVendor.name.split(' ')[0], icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100', sub: `₹${topVendor.totalSpend.toLocaleString('en-IN')}` },
                   ]
                   const filters = ['All', 'Active', 'Inactive', 'Hardware', 'Software', 'Services']
                   const vendorAccent = (id) => {
                     const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-indigo-500']
-                    return colors[parseInt(id.slice(1)) % colors.length]
+                    return colors[id.charCodeAt(id.length - 1) % colors.length]
                   }
                   const Stars = ({ rating }) => {
                     const full = Math.floor(rating)
@@ -3899,7 +4364,7 @@ function App() {
                           </p>
                         </div>
                         <button
-                          onClick={() => alert('Add Vendor form would open here')}
+                          onClick={() => { setEditVendorTarget(null); setVendorForm({ name: '', contact: '', email: '', phone: '', city: '', country: 'India', category: 'Hardware', status: 'Active' }); setVendorFormError(''); setShowVendorModal(true) }}
                           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm hover:-translate-y-0.5 transform"
                         >
                           <Plus className="w-4 h-4" />
@@ -4064,10 +4529,10 @@ function App() {
                                         <button onClick={() => setSelectedVendor(v)} title="View" className="w-8 h-8 rounded-md bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors shadow-sm">
                                           <Eye className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => alert(`Edit ${v.name}`)} title="Edit" className="w-8 h-8 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <button onClick={() => { setEditVendorTarget(v); setVendorForm({ name: v.name, contact: v.contact, email: v.email, phone: v.phone, city: v.city, country: v.country, category: v.category, status: v.status }); setVendorFormError(''); setShowVendorModal(true) }} title="Edit" className="w-8 h-8 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors shadow-sm">
                                           <Pencil className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => { if (confirm(`Delete ${v.name}?`)) alert('Deleted (demo)') }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <button onClick={() => { if (confirm(`Delete ${v.name}?`)) setVendors(prev => prev.filter(x => x._id !== v._id)) }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
                                           <Trash2 className="w-4 h-4" />
                                         </button>
                                       </div>
@@ -4149,7 +4614,7 @@ function App() {
                                   <p className="text-sm text-gray-500 italic">No assets currently supplied by this vendor.</p>
                                 ) : (
                                   <div className="space-y-2 max-h-44 overflow-y-auto">
-                                    {dummyAssets.filter(a => a.vendor === selectedVendor.name).map(a => (
+                                    {assets.filter(a => a.vendor === selectedVendor.name).map(a => (
                                       <button
                                         key={a.id}
                                         onClick={() => { setSelectedAssetId(a.id); setDetailsTab('Assignment History'); setSelectedVendor(null) }}
@@ -4171,9 +4636,81 @@ function App() {
                               <button onClick={() => setSelectedVendor(null)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">
                                 Close
                               </button>
-                              <button onClick={() => alert(`Edit ${selectedVendor.name}`)} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+                              <button onClick={() => { setEditVendorTarget(selectedVendor); setVendorForm({ name: selectedVendor.name, contact: selectedVendor.contact, email: selectedVendor.email, phone: selectedVendor.phone, city: selectedVendor.city, country: selectedVendor.country, category: selectedVendor.category, status: selectedVendor.status }); setVendorFormError(''); setSelectedVendor(null); setShowVendorModal(true) }} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
                                 <Edit3 className="w-4 h-4" />
                                 Edit Vendor
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {/* Vendor Add/Edit Modal */}
+                      {showVendorModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowVendorModal(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">{editVendorTarget ? 'Edit Vendor' : 'Add New Vendor'}</h3>
+                              <button onClick={() => setShowVendorModal(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              {vendorFormError && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{vendorFormError}</div>}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2">
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Company Name <span className="text-red-500">*</span></label>
+                                  <input type="text" placeholder="e.g. Dell India Pvt. Ltd." value={vendorForm.name} onChange={(e) => setVendorForm(p => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Contact Person <span className="text-red-500">*</span></label>
+                                  <input type="text" placeholder="Contact name" value={vendorForm.contact} onChange={(e) => setVendorForm(p => ({ ...p, contact: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                                  <input type="email" placeholder="vendor@company.com" value={vendorForm.email} onChange={(e) => setVendorForm(p => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                                  <input type="text" placeholder="+91 98765 00000" value={vendorForm.phone} onChange={(e) => setVendorForm(p => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">City</label>
+                                  <input type="text" placeholder="Mumbai" value={vendorForm.city} onChange={(e) => setVendorForm(p => ({ ...p, city: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+                                  <select value={vendorForm.category} onChange={(e) => setVendorForm(p => ({ ...p, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    {['Hardware','Software','Services','Cloud'].map(c => <option key={c}>{c}</option>)}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                                  <select value={vendorForm.status} onChange={(e) => setVendorForm(p => ({ ...p, status: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option>Active</option><option>Inactive</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setShowVendorModal(false)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">Cancel</button>
+                              <button
+                                onClick={async() => {
+                                  if (!vendorForm.name.trim() || !vendorForm.contact.trim() || !vendorForm.email.trim()) {
+                                    setVendorFormError('Please fill in Company Name, Contact Person, and Email.')
+                                    return
+                                  }
+                                  if (editVendorTarget) {
+                                    setVendors(prev => prev.map(v => v.id === editVendorTarget.id ? { ...v, ...vendorForm } : v))
+                                  } else {
+                                    const nums = vendors.map(v => parseInt((v.id || '').slice(1))).filter(n => !isNaN(n))
+                                    const nextNum = (nums.length ? Math.max(...nums) : 0) + 1
+                                    const nextId = 'V' + String(nextNum).padStart(3, '0')
+                                    setVendors(prev => [...prev, { id: nextId, ...vendorForm, assetsCount: 0, totalSpend: 0, rating: 3, since: new Date().getFullYear() }])
+                                    await saveToDb('vendors', { id: nextId, ...vendorForm, assetsCount: 0, totalSpend: 0, rating: 3, since: new Date().getFullYear() })
+                                  }
+                                  setShowVendorModal(false)
+                                }}
+                                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                              >
+                                {editVendorTarget ? 'Save Changes' : 'Add Vendor'}
                               </button>
                             </div>
                           </div>
@@ -4185,7 +4722,7 @@ function App() {
               ) : activeMenu === 'Return Assets' ? (
                 (() => {
                   // Pending = Active + Overdue assignments
-                  const pending = dummyAssignments.filter(a => a.status === 'Active' || a.status === 'Overdue')
+                  const pending = assignments.filter(a => a.status === 'Active' || a.status === 'Overdue')
                   const q = returnSearch.toLowerCase()
                   const pendingFiltered = pending.filter(a => !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q))
                   const recentFiltered = returnedRecords.filter(a => !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q))
@@ -4511,10 +5048,10 @@ function App() {
                 })()
               ) : activeMenu === 'Asset Assignment' ? (
                 (() => {
-                  const filtered = dummyAssignments.filter((a) => {
+                  const filtered = assignments.filter((a) => {
                     const inFilter = assignFilter === 'All' || a.status === assignFilter
                     const q = assignSearch.toLowerCase()
-                    const inSearch = !q || a.id.toLowerCase().includes(q) || a.assetName.toLowerCase().includes(q) || a.assetId.toLowerCase().includes(q) || a.employee.toLowerCase().includes(q) || a.department.toLowerCase().includes(q)
+                    const inSearch = !q || (v.name||'').toLowerCase().includes(q) || (v.contact||'').toLowerCase().includes(q) || (v.email||'').toLowerCase().includes(q) || (v.city||'').toLowerCase().includes(q)
                     return inFilter && inSearch
                   })
                   const totalPages = Math.max(1, Math.ceil(filtered.length / ASSIGN_PER_PAGE))
@@ -4523,10 +5060,10 @@ function App() {
                   const pageRows = filtered.slice(startIdx, startIdx + ASSIGN_PER_PAGE)
 
                   const stats = [
-                    { label: 'Total Assignments', value: dummyAssignments.length, icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-100' },
-                    { label: 'Active', value: dummyAssignments.filter(a => a.status === 'Active').length, icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-100' },
-                    { label: 'Returned', value: dummyAssignments.filter(a => a.status === 'Returned').length, icon: RotateCw, color: 'text-gray-500', bg: 'bg-gray-100' },
-                    { label: 'Overdue', value: dummyAssignments.filter(a => a.status === 'Overdue').length, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-100' },
+                    { label: 'Total Assignments', value: assignments.length, icon: UserPlus, color: 'text-blue-500', bg: 'bg-blue-100' },
+                    { label: 'Active', value: assignments.filter(a => a.status === 'Active').length, icon: CheckSquare, color: 'text-emerald-500', bg: 'bg-emerald-100' },
+                    { label: 'Returned', value: assignments.filter(a => a.status === 'Returned').length, icon: RotateCw, color: 'text-gray-500', bg: 'bg-gray-100' },
+                    { label: 'Overdue', value: assignments.filter(a => a.status === 'Overdue').length, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-100' },
                   ]
                   const filters = ['All', 'Active', 'Returned', 'Overdue']
                   const statusBadge = (s) =>
@@ -4534,14 +5071,22 @@ function App() {
                     : s === 'Returned' ? 'bg-gray-100 text-gray-700 border-gray-200'
                     : 'bg-red-100 text-red-700 border-red-200'
 
-                  const handleAssignSubmit = () => {
+                  const handleAssignSubmit =async () => {
                     if (!newAssign.assetId || !newAssign.empId) {
                       alert('Please select an asset and an employee')
                       return
                     }
-                    const asset = dummyAssets.find(a => a.id === newAssign.assetId)
-                    const emp = dummyEmployees.find(e => e.id === newAssign.empId)
-                    alert(`✓ ${asset?.name} assigned to ${emp?.name} (demo — not persisted)`)
+                    const asset = assets.find(a => a._id === newAssign.assetId)
+                    const emp = employees.find(e => e._id === newAssign.empId)
+                    if (!asset || !emp) return
+                    const today = new Date().toLocaleDateString('en-GB').replace(/\//g,'-')
+                    const retDate = newAssign.returnDate ? new Date(newAssign.returnDate).toLocaleDateString('en-GB').replace(/\//g,'-') : '-'
+                    const newId = 'AS' + String(Math.max(...assignments.map(x => parseInt(x.id.replace('AS',''))||0)) + 1).padStart(4,'0')
+                    const newRec = { id: newId, assetId: asset._id, assetName: asset.name, empId: emp._id, employee: emp.name, department: emp.department, assignedDate: today, returnDate: retDate, status: 'Active' }
+                    setAssignments(prev => [newRec, ...prev])
+                    setAssets(prev => prev.map(a => a._id === asset._id ? { ...a, status: 'Assigned', assignedTo: emp.name } : a))
+                    await saveToDb('assignments', newRec)
+                    await updateInDb('assets', asset._id, { status: 'Assigned', assignedTo: emp.name })
                     setShowAssignModal(false)
                     setNewAssign({ assetId: '', empId: '', returnDate: '' })
                   }
@@ -4672,7 +5217,7 @@ function App() {
                                           <Eye className="w-4 h-4" />
                                         </button>
                                         {a.status === 'Active' || a.status === 'Overdue' ? (
-                                          <button onClick={() => { if (confirm(`Mark ${a.assetName} as returned by ${a.employee}?`)) alert('Returned (demo)') }} title="Mark Returned" className="w-8 h-8 rounded-md bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                          <button onClick={() => { if (confirm(`Mark ${a.assetName} as returned by ${a.employee}?`)) { setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, status: 'Returned', returnDate: new Date().toLocaleDateString('en-GB').replace(/\//g,'-') } : x)); setAssets(prev => prev.map(x => x.id === a.assetId ? { ...x, status: 'Available', assignedTo: '' } : x)) } }} title="Mark Returned" className="w-8 h-8 rounded-md bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-sm">
                                             <RotateCw className="w-4 h-4" />
                                           </button>
                                         ) : (
@@ -4680,7 +5225,7 @@ function App() {
                                             <Check className="w-4 h-4" />
                                           </button>
                                         )}
-                                        <button onClick={() => { if (confirm(`Delete assignment ${a.id}?`)) alert('Deleted (demo)') }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
+                                        <button onClick={() => { if (confirm(`Delete assignment ${a.id}?`)) setAssignments(prev => prev.filter(x => x.id !== a.id)) }} title="Delete" className="w-8 h-8 rounded-md bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm">
                                           <Trash2 className="w-4 h-4" />
                                         </button>
                                       </div>
@@ -4727,8 +5272,8 @@ function App() {
                                 <div className="relative">
                                   <select value={newAssign.assetId} onChange={(e) => setNewAssign({ ...newAssign, assetId: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 pr-10">
                                     <option value="">Choose available asset</option>
-                                    {dummyAssets.filter(a => a.status === 'Available').map(a => (
-                                      <option key={a.id} value={a.id}>{a.id} — {a.name} ({a.category})</option>
+                                    {assets.filter(a => a.status === 'Available').map(a => (
+                                      <option key={a._id} value={a._id}>{a.id} — {a.name} ({a.category})</option>
                                     ))}
                                   </select>
                                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -4739,8 +5284,8 @@ function App() {
                                 <div className="relative">
                                   <select value={newAssign.empId} onChange={(e) => setNewAssign({ ...newAssign, empId: e.target.value })} className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 pr-10">
                                     <option value="">Choose employee</option>
-                                    {dummyEmployees.map(e => (
-                                      <option key={e.id} value={e.id}>{e.id} — {e.name} ({e.department})</option>
+                                    {employees.map(e => (
+                                      <option key={e._id} value={e._id}>{e.id} — {e.name} ({e.department})</option>
                                     ))}
                                   </select>
                                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -4764,9 +5309,11 @@ function App() {
                           </div>
                         </div>
                       )}
+
                     </div>
                   )
                 })()
+
               ) : activeMenu === 'Categories' ? (
                 (() => {
                   const categoryIconMap = {
@@ -4781,12 +5328,16 @@ function App() {
                     'Peripheral': { icon: Mouse, color: 'text-orange-600', bg: 'bg-orange-100' },
                   }
                   const counts = {}
-                  dummyAssets.forEach((a) => { counts[a.category] = (counts[a.category] || 0) + 1 })
+                  assets.forEach((a) => { if (a.category) counts[a.category] = (counts[a.category] || 0) + 1 })
+                  customCategories.forEach((c) => { if (!counts[c]) counts[c] = 0 })
                   const categories = Object.entries(counts)
-                    .map(([name, count]) => ({ name, count, ...(categoryIconMap[name] || { icon: Package, color: 'text-gray-600', bg: 'bg-gray-100' }) }))
+                    .map(([name, count]) => {
+                      const iconKey = Object.keys(categoryIconMap).find(k => k === name)
+                      return { name, count, ...(iconKey ? categoryIconMap[iconKey] : { icon: Package, color: 'text-gray-600', bg: 'bg-gray-100' }) }
+                    })
                     .sort((a, b) => b.count - a.count)
 
-                  const filtered = dummyAssets.filter((a) => {
+                  const filtered = assets.filter((a) => {
                     const inCat = selectedCategory === 'All' || a.category === selectedCategory
                     const q = catSearch.toLowerCase()
                     const inSearch = !q || a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.serial.toLowerCase().includes(q)
@@ -4808,7 +5359,7 @@ function App() {
                           </p>
                         </div>
                         <button
-                          onClick={() => alert('Add Category form would open here')}
+                          onClick={() => { setCatForm({ name: '' }); setCatFormError(''); setShowCategoryModal(true) }}
                           className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
                         >
                           <Plus className="w-4 h-4" />
@@ -4830,7 +5381,7 @@ function App() {
                             <Boxes className="w-6 h-6 text-white" />
                           </div>
                           <p className="text-sm font-semibold text-gray-900">All Categories</p>
-                          <p className="text-2xl font-bold text-gray-900 mt-1">{dummyAssets.length}</p>
+                          <p className="text-2xl font-bold text-gray-900 mt-1">{assets.length}</p>
                           <p className="text-xs text-gray-500 mt-0.5">Total Assets</p>
                         </button>
 
@@ -4936,6 +5487,49 @@ function App() {
                           </div>
                         )}
                       </div>
+
+                      {/* Category Add Modal */}
+                      {showCategoryModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200" onClick={() => setShowCategoryModal(false)}>
+                          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                              <h3 className="text-lg font-bold text-gray-900">Add New Category</h3>
+                              <button onClick={() => setShowCategoryModal(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors text-gray-500">✕</button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                              {catFormError && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{catFormError}</div>}
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Category Name <span className="text-red-500">*</span></label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. Networking Equipment"
+                                  value={catForm.name}
+                                  onChange={(e) => setCatForm(p => ({ ...p, name: e.target.value }))}
+                                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">This category will appear in the Assets form and filter cards.</p>
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                              <button onClick={() => setShowCategoryModal(false)} className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 transition-colors">Cancel</button>
+                              <button
+                                onClick={() => {
+                                  const name = catForm.name.trim()
+                                  if (!name) { setCatFormError('Category name is required.'); return }
+                                  const existing = assets.map(a => a.category)
+                                  if (existing.includes(name) || customCategories.includes(name)) { setCatFormError('This category already exists.'); return }
+                                  setCustomCategories(prev => [...prev, name])
+                                  setSelectedCategory(name)
+                                  setShowCategoryModal(false)
+                                }}
+                                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                              >
+                                Add Category
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })()
@@ -5361,6 +5955,97 @@ function App() {
           </main>
         </div>
       </div>
+      {/* ── QR CODE MODAL ── */}
+        {qrModalAsset && qrCodeDataUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 text-center">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">
+                  QR Code — {qrModalAsset.id}
+                </h3>
+                <button
+                  onClick={() => { setQrModalAsset(null); setQrCodeDataUrl(null) }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+              {/* QR Image */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4 inline-block w-full">
+                <img
+                  src={qrCodeDataUrl}
+                  alt={`QR Code for ${qrModalAsset.id}`}
+                  className="w-48 h-48 mx-auto"
+                />
+              </div>
+              {/* Asset Info */}
+              <div className="text-left space-y-2 mb-6 bg-blue-50 rounded-xl p-4">
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">
+                  Asset Info
+                </p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Asset ID</span>
+                  <span className="font-bold text-blue-600">{qrModalAsset.id}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Name</span>
+                  <span className="font-semibold text-gray-900">{qrModalAsset.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Serial</span>
+                  <span className="font-semibold text-gray-900">{qrModalAsset.serial}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Status</span>
+                  <span className={`font-bold ${
+                    qrModalAsset.status === 'Assigned' ? 'text-green-600' :
+                    qrModalAsset.status === 'Available' ? 'text-blue-600' :
+                    'text-orange-500'
+                  }`}>{qrModalAsset.status}</span>
+                </div>
+              </div>
+              {/* Buttons */}
+              <div className="flex gap-3">
+              {/* Download Button */}
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a')
+                    link.href = qrCodeDataUrl
+                    link.download = `QR-${qrModalAsset.id}.png`
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                >
+                  <UploadCloud className="w-4 h-4 rotate-180" />
+                  Download
+                </button>
+                {/* Print Button */}
+                <button
+                  onClick={() => {
+                    const win = window.open('')
+                    win.document.write(`
+                      <html><body style="text-align:center;padding:20px">
+                        <h2>${qrModalAsset.name}</h2>
+                        <p>Asset ID: <strong>${qrModalAsset.id}</strong></p>
+                        <img src="${qrCodeDataUrl}" width="200" />
+                        <p>${qrModalAsset.serial}</p>
+                        <script>window.onload=()=>{window.print();window.close()}<\/script>
+                      </body></html>
+                    `)
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  <PrintIcon className="w-4 h-4" />
+                  Print
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+          
     </div>
   )
 }
